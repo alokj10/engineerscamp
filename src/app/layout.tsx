@@ -30,16 +30,16 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          {session ? (
-            <div className="flex">
-              <Sidebar />
-              <main className="flex-1 p-8">{children}</main>
-            </div>
-          ) : (
-            <main>{children}</main>
-          )}
-        </Providers>
+          <Providers>
+            {session ? (
+              <div className="flex">
+                <Sidebar />
+                <main className="flex-1">{children}</main>
+              </div>
+            ) : (
+              <main>{children}</main>
+            )}
+          </Providers>
       </body>
     </html>
   );
