@@ -4,6 +4,7 @@ import { AcademicCapIcon } from "../page"
 import { usePathname } from 'next/navigation'
 import { useAtomValue } from 'jotai'
 import { testNameAtom } from '../store/myTestAtom'
+import { Toaster } from "react-hot-toast"
 
 export default function TestsLayout({
   children,
@@ -34,6 +35,34 @@ export default function TestsLayout({
 
   return (
     <div className="flex flex-col h-full w-full">
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            duration: 3000,
+            style: {
+              background: 'green',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#FFFAEE',
+            },
+          },
+          error: {
+            duration: 3000,
+            style: {
+              background: '#d26345',
+              color: '#fff',
+            },
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#FFFAEE',
+            },
+          },
+        }}
+      />
       <header className="w-full bg-gray-50 border-b px-8 py-4">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-semibold text-gray-800">

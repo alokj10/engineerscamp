@@ -14,12 +14,47 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  name  String
-  email String  @unique
-  password String
-  userType String
-  isActive Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  password      String
+  userType      String
+  isActive      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now())
+  questions     Questions[]
+  answerOptions AnswerOptions[]
+}
+
+model Questions {
+  id          Int               @id @default(autoincrement())
+  question    String            @db.Text
+  type        String
+  category    String
+  createdBy   User              @relation(fields: [userId], references: [id])
+  userId      Int
+  createdOn   DateTime          @default(now())
+  updatedOn   DateTime          @default(now())
+  answers     QuestionAnswers[]
+}
+
+model AnswerOptions {
+  id          Int               @id @default(autoincrement())
+  answer      String
+  category    String
+  createdBy   User              @relation(fields: [userId], references: [id])
+  userId      Int
+  createdOn   DateTime          @default(now())
+  updatedOn   DateTime          @default(now())
+  questions   QuestionAnswers[]
+}
+
+model QuestionAnswers {
+  id              Int           @id @default(autoincrement())
+  question        Questions     @relation(fields: [questionId], references: [id])
+  questionId      Int
+  answerOption    AnswerOptions @relation(fields: [answerOptionId], references: [id])
+  answerOptionId  Int
+  isCorrect       Boolean
+  sortOrder       Int           @default(1)
 }
