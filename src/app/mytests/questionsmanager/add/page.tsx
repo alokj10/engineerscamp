@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
-import { Editor, EditorState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
+import { Editor, EditorState, ContentState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { toast } from 'react-hot-toast'
 import { QuestionAnswerDefinitionAtom } from '@/app/store/questionAnswerDefinitionAtom'
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const StyleButton = ({ onToggle, active, label, style }) => {
   return (
@@ -71,96 +73,185 @@ type QuestionType = 'Single Choice' | 'Multiple Choice' | 'Descriptive' | 'Short
 type Category = 'Programming' | 'Technology' | 'Academic';
 
 interface AnswerOption {
-  content: EditorState;
-  isCorrect: boolean;
+    content: EditorState;
+    isCorrect: boolean;
 }
 
 interface QuestionForm {
-  question: EditorState;
-  category: Category;
-  type: QuestionType;
-  options: AnswerOption[];
+    question: EditorState;
+    category: Category;
+    type: QuestionType;
+    options: AnswerOption[];
 }
 
+const questionSchema = z.object({
+    question: z.custom((val) => {
+      const editorState = val as EditorState;
+      return editorState.getCurrentContent().hasText();
+    }, "Question is required"),
+    category: z.enum(['Programming', 'Technology', 'Academic'], {
+      required_error: "Category is required"
+    }),
+    type: z.enum(['Single Choice', 'Multiple Choice', 'Descriptive', 'Short Answer', 'Survey', 'True False'], {
+      required_error: "Question type is required"
+    }),
+    options: z.array(z.object({
+      content: z.custom((val) => {
+        const editorState = val as EditorState;
+        return editorState.getCurrentContent().hasText();
+      }, "Answer option content is required"),
+      isCorrect: z.boolean()
+    })).refine((options) => {
+      const type = useWatch({ name: 'type' });
+    
+      if (type === 'Single Choice' || type === 'Survey') {
+        return options.length >= 2 && options.every(opt => opt.content.getCurrentContent().hasText());
+      }
+    
+      if (type === 'Multiple Choice') {
+        return options.length >= 3 && options.every(opt => opt.content.getCurrentContent().hasText());
+      }
+    
+      if (type === 'True False') {
+        return options.length === 2;
+      }
+    
+      return true;
+    }, {
+      message: "Invalid number of options for selected question type"
+    })
+});
+
 export default function AddQuestion() {
-  const router = useRouter();
-  const { control, watch, handleSubmit } = useForm<QuestionForm>({
-    defaultValues: {
-      question: EditorState.createEmpty(),
-      category: 'Programming',
-      type: 'Single Choice',
-      options: [
-        { content: EditorState.createEmpty(), isCorrect: false },
-        { content: EditorState.createEmpty(), isCorrect: false }
-      ]
-    }
-  });
+    const router = useRouter();
+    const { control, watch, handleSubmit } = useForm<QuestionForm>({
+      resolver: zodResolver(questionSchema),
+      defaultValues: {
+        question: EditorState.createEmpty(),
+        category: 'Programming',
+        type: 'Single Choice',
+        options: [
+          { content: EditorState.createEmpty(), isCorrect: false },
+          { content: EditorState.createEmpty(), isCorrect: false }
+        ]
+      }
+    });
+    const { setValue } = useForm<QuestionForm>();
 
-  const questionType = watch('type');
+    const questionType = watch('type');
 
-  const getMinOptions = (type: QuestionType) => {
-    switch (type) {
-      case 'Single Choice': return 2;
-      case 'Multiple Choice': return 3;
-      case 'True False': return 2;
-      case 'Survey': return 2;
-      default: return 1;
+    const getMinOptions = (type: QuestionType) => {
+      switch (type) {
+        case 'Single Choice': return 2;
+        case 'Multiple Choice': return 3;
+        case 'True False': return 2;
+        case 'Survey': return 2;
+        default: return 1;
+      }
+    };
+  
+    const onSubmit = async (data: QuestionForm) => {
+      try {
+        const formattedData = {
+            ...data,
+            question: convertToRaw(data.question.getCurrentContent()),
+            options: data.options.map(option => ({
+                ...option,
+                content: convertToRaw(option.content.getCurrentContent())
+            }))
+        }
+  
+        const questionAnswerDef: QuestionAnswerDefinitionAtom = {
+            question: {
+                questionId: 0,
+                question: JSON.stringify(formattedData.question),
+                category: formattedData.category,
+                type: formattedData.type,
+                createdBy: '',
+                createdOn: ''
+            },
+            answerOptions: formattedData.options.map((option, index) => ({
+                answerOptionId: 0,
+                answer: JSON.stringify(option.content),
+                category: formattedData.category,
+                isCorrect: option.isCorrect,
+                createdBy: '',
+                createdOn: ''
+            }))
+        }
+  
+        const response = await fetch('/api/mytests/questionsmanager', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(questionAnswerDef)
+        })
+  
+        if (response.ok) {
+            toast.success('Question added successfully')
+            router.push('/mytests/questionsmanager')
+            router.refresh()
+        } else {
+            const error = await response.json()
+            toast.error(error.message || 'Failed to add question')
+        }
+      } catch (error: any) {
+        toast.error(error.message);
+      }
     }
-  };
-  
-  const onSubmit = async (data: QuestionForm) => {
-  
-      const formattedData = {
-          ...data,
-          question: convertToRaw(data.question.getCurrentContent()),
-          options: data.options.map(option => ({
-              ...option,
-              content: convertToRaw(option.content.getCurrentContent())
-          }))
+
+    const onError = (errors: any) => {
+      if (errors.question) {
+        toast.error('Please enter a question');
+        return;
       }
-  
-      const questionAnswerDef: QuestionAnswerDefinitionAtom = {
-          question: {
-              questionId: 0,
-              question: JSON.stringify(formattedData.question),
-              category: formattedData.category,
-              type: formattedData.type,
-              createdBy: '',
-              createdOn: ''
-          },
-          answerOptions: formattedData.options.map((option, index) => ({
-              answerOptionId: 0,
-              answer: JSON.stringify(option.content),
-              category: formattedData.category,
-              isCorrect: option.isCorrect,
-              createdBy: '',
-              createdOn: ''
-          }))
+      if (errors.category) {
+        toast.error('Please select a category');
+        return;
       }
-  
-      const response = await fetch('/api/mytests/questionsmanager', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(questionAnswerDef)
-      })
-  
-      if (response.ok) {
-          toast.success('Question added successfully')
-          router.push('/mytests/questionsmanager')
-          router.refresh()
-      } else {
-          const error = await response.json()
-          toast.error(error.message || 'Failed to add question')
+      if (errors.type) {
+        toast.error('Please select a question type');
+        return;
       }
-  }
-  
-  return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="flex items-center mb-6">
-        <button
-          onClick={() => router.back()}
+      if (errors.options) {
+        const type = watch('type');
+        switch(type) {
+          case 'Single Choice':
+          case 'Survey':
+            toast.error('Please provide at least 2 answer options with content');
+            break;
+          case 'Multiple Choice':
+            toast.error('Please provide at least 3 answer options with content');
+            break;
+          case 'True False':
+            toast.error('True/False question must have exactly 2 options');
+            break;
+          default:
+            toast.error('Please check answer options');
+        }
+        return;
+      }
+    };
+    
+
+    useEffect(() => {
+      const type = watch('type');
+      if (type === 'True False') {
+        const trueState = EditorState.createWithContent(ContentState.createFromText('True'));
+        const falseState = EditorState.createWithContent(ContentState.createFromText('False'));
+        setValue('options', [
+          { content: trueState, isCorrect: false },
+          { content: falseState, isCorrect: false }
+        ]);
+      }
+    }, [watch('type')]);
+    
+    return (
+      <div className="container mx-auto p-6 max-w-4xl">
+        <div className="flex items-center mb-6">
+          <button
+            onClick={() => router.back()}
           className="mr-4 p-2 hover:bg-gray-100 rounded-full"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,7 +261,7 @@ export default function AddQuestion() {
         <h1 className="text-2xl font-bold">Add New Question</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-6">
         <div className="space-y-4">
           <label className="block text-sm font-medium">Question</label>
           <Controller

@@ -53,8 +53,9 @@ export default function TestsLayout({
           error: {
             duration: 3000,
             style: {
-              background: '#d26345',
-              color: '#fff',
+              background: '#efe5e2',
+              color: '#EF4444',
+              border: '1px solid #EF4444',
             },
             iconTheme: {
               primary: '#EF4444',
