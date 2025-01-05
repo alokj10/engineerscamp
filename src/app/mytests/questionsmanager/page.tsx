@@ -97,7 +97,7 @@ export default function QuestionsManager() {
   <div className="flex justify-between items-center p-4">
     <div className="flex items-center gap-4">
       <span className="text-gray-600 font-medium">
-        {filteredQuestions.length} Question(s)
+        {filteredQuestions?.length} Question(s)
       </span>
       <div className="flex gap-2">
         {categories.map(category => (

@@ -24,37 +24,65 @@ model User {
   updatedAt     DateTime        @default(now())
   questions     Questions[]
   answerOptions AnswerOptions[]
+  Tests         Tests[]
 }
 
 model Questions {
-  id          Int               @id @default(autoincrement())
-  question    String            @db.Text
-  type        String
-  category    String
-  createdBy   User              @relation(fields: [userId], references: [id])
-  userId      Int
-  createdOn   DateTime          @default(now())
-  updatedOn   DateTime          @default(now())
-  answers     QuestionAnswers[]
+  id                   Int                      @id @default(autoincrement())
+  question             String                   @db.Text
+  type                 String
+  category             String
+  createdBy            User                     @relation(fields: [createUserId], references: [id])
+  createUserId         Int
+  createdOn            DateTime
+  updatedOn            DateTime                 @default(now())
+  answers              QuestionAnswerMappings[]
+  testQuestionMappings TestQuestionMappings[]
 }
 
 model AnswerOptions {
-  id          Int               @id @default(autoincrement())
-  answer      String
-  category    String
-  createdBy   User              @relation(fields: [userId], references: [id])
-  userId      Int
-  createdOn   DateTime          @default(now())
-  updatedOn   DateTime          @default(now())
-  questions   QuestionAnswers[]
+  id           Int                      @id @default(autoincrement())
+  answer       String
+  category     String
+  createdBy    User                     @relation(fields: [createUserId], references: [id])
+  createUserId Int
+  createdOn    DateTime
+  updatedOn    DateTime                 @default(now())
+  questions    QuestionAnswerMappings[]
 }
 
-model QuestionAnswers {
-  id              Int           @id @default(autoincrement())
-  question        Questions     @relation(fields: [questionId], references: [id])
-  questionId      Int
-  answerOption    AnswerOptions @relation(fields: [answerOptionId], references: [id])
-  answerOptionId  Int
-  isCorrect       Boolean
-  sortOrder       Int           @default(1)
+model QuestionAnswerMappings {
+  id                   Int                    @id @default(autoincrement())
+  question             Questions              @relation(fields: [questionId], references: [id])
+  questionId           Int
+  answerOption         AnswerOptions          @relation(fields: [answerOptionId], references: [id])
+  answerOptionId       Int
+  isCorrect            Boolean
+  sortOrder            Int                    @default(1)
+  TestQuestionMappings TestQuestionMappings[]
+}
+
+model Tests {
+  id                   Int                    @id @default(autoincrement())
+  name                 String
+  description          String
+  category             String
+  questionSortOrder    String
+  status               String
+  createdBy            User                   @relation(fields: [createUserId], references: [id])
+  createUserId         Int
+  createdOn            DateTime
+  updatedOn            DateTime               @default(now())
+  testQuestionMappings TestQuestionMappings[]
+}
+
+model TestQuestionMappings {
+  id                      Int                    @id @default(autoincrement())
+  test                    Tests                  @relation(fields: [testId], references: [id])
+  testId                  Int
+  questionAnswerMapping   QuestionAnswerMappings @relation(fields: [questionAnswerMappingId], references: [id])
+  questionAnswerMappingId Int
+  sortOrder               Int                    @default(1)
+  Questions               Questions?             @relation(fields: [questionsId], references: [id])
+  questionsId             Int?
 }

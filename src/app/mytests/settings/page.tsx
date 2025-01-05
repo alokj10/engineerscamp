@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { toast } from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { testNameAtom } from '../../store/myTestAtom'
+import { TestQuestionMappingState } from '../../store/myTestAtom'
 
 const settingsSchema = z.object({
   testName: z.string().min(1, 'Test name is required'),
@@ -16,7 +17,8 @@ const settingsSchema = z.object({
 
 export default function Settings() {
   const [testName, setTestName] = useAtom(testNameAtom)
-
+  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(TestQuestionMappingState);
+  console.log('currentTestConfiguration', currentTestConfiguration);
   const [formData, setFormData] = useState({
     testName: testName,
     category: 'Uncategorized',
@@ -54,6 +56,10 @@ export default function Settings() {
         })
       }
     }
+  }
+
+  const getSaveButtonText = () => {
+    return currentTestConfiguration?.test.testId === -1 ? 'Create Test' : 'Save'
   }
 
   return (
@@ -119,7 +125,7 @@ export default function Settings() {
             type="submit"
             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
           >
-            Save Settings
+            {getSaveButtonText()}
           </button>
         </div>
       </form>
