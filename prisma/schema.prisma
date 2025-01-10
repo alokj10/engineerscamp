@@ -25,6 +25,7 @@ model User {
   questions     Questions[]
   answerOptions AnswerOptions[]
   Tests         Tests[]
+  TestCategory  TestCategory[]
 }
 
 model Questions {
@@ -38,17 +39,19 @@ model Questions {
   updatedOn            DateTime                 @default(now())
   answers              QuestionAnswerMappings[]
   testQuestionMappings TestQuestionMappings[]
+  TestResponseDetails  TestResponseDetails[]
 }
 
 model AnswerOptions {
-  id           Int                      @id @default(autoincrement())
-  answer       String
-  category     String
-  createdBy    User                     @relation(fields: [createUserId], references: [id])
-  createUserId Int
-  createdOn    DateTime
-  updatedOn    DateTime                 @default(now())
-  questions    QuestionAnswerMappings[]
+  id                  Int                      @id @default(autoincrement())
+  answer              String
+  category            String
+  createdBy           User                     @relation(fields: [createUserId], references: [id])
+  createUserId        Int
+  createdOn           DateTime
+  updatedOn           DateTime                 @default(now())
+  questions           QuestionAnswerMappings[]
+  TestResponseDetails TestResponseDetails[]
 }
 
 model QuestionAnswerMappings {
@@ -69,11 +72,14 @@ model Tests {
   category             String
   questionSortOrder    String
   status               String
+  testAccessMode       String                 @default("AccessCode")
   createdBy            User                   @relation(fields: [createUserId], references: [id])
   createUserId         Int
   createdOn            DateTime
   updatedOn            DateTime               @default(now())
   testQuestionMappings TestQuestionMappings[]
+  TestAccessCodes      TestAccessCodes[]
+  TestResponse         TestResponse[]
 }
 
 model TestQuestionMappings {
@@ -85,4 +91,57 @@ model TestQuestionMappings {
   sortOrder               Int                    @default(1)
   Questions               Questions?             @relation(fields: [questionsId], references: [id])
   questionsId             Int?
+}
+
+model TestAccessCodes {
+  id           Int        @id @default(autoincrement())
+  test         Tests      @relation(fields: [testId], references: [id])
+  testId       Int
+  respondent   Respondent @relation(fields: [respondentId], references: [id])
+  respondentId Int
+  updatedOn    DateTime   @default(now())
+}
+
+model Respondent {
+  id              Int               @id @default(autoincrement())
+  email           String?
+  firstName       String?
+  lastName        String?
+  timeZone        String?
+  updatedOn       DateTime          @default(now())
+  TestAccessCodes TestAccessCodes[]
+  TestResponse    TestResponse[]
+}
+
+model TestResponse {
+  id                  Int                   @id @default(autoincrement())
+  test                Tests                 @relation(fields: [testId], references: [id])
+  testId              Int
+  respondent          Respondent            @relation(fields: [respondentId], references: [id])
+  respondentId        Int
+  startedOn           DateTime
+  submittedOn         DateTime
+  status              String                @default("Pending") // Pending, InProgress, Paused, Submitted
+  score               Int
+  updatedOn           DateTime              @default(now())
+  TestResponseDetails TestResponseDetails[]
+}
+
+model TestResponseDetails {
+  id             Int           @id @default(autoincrement())
+  testResponse   TestResponse  @relation(fields: [testResponseId], references: [id])
+  testResponseId Int
+  question       Questions     @relation(fields: [questionId], references: [id])
+  questionId     Int
+  answerOption   AnswerOptions @relation(fields: [answerOptionId], references: [id])
+  answerOptionId Int
+  answeredOn     DateTime      @default(now())
+}
+
+model TestCategory {
+  id           Int      @id @default(autoincrement())
+  name         String
+  createdBy    User     @relation(fields: [createUserId], references: [id])
+  createUserId Int
+  updatedOn    DateTime @default(now())
 }

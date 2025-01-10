@@ -3,7 +3,7 @@ import Link from "next/link"
 import { AcademicCapIcon } from "../page"
 import { usePathname } from 'next/navigation'
 import { atom, useAtom } from 'jotai'
-import { TestQuestionMappingAtom, TestQuestionMappingState } from '../store/myTestAtom'
+import { currentTestConfigurationAtom, TestDefinitionAtom } from '@/app/store/myTestAtom'
 import { Toaster } from "react-hot-toast"
 
 
@@ -12,19 +12,20 @@ export default function TestsLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(TestQuestionMappingState)
+  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
+  console.log('currentTestConfiguration-layout', currentTestConfiguration)
   const pathname = usePathname()
   
   const showSidebar = pathname !== '/mytests'
 
   const isOptionDisabled = (href: string) => {
-    if (!currentTestConfiguration || currentTestConfiguration.test.testId === -1) {
+    if (!currentTestConfiguration || currentTestConfiguration.testId === -1) {
       return href !== '/mytests/settings'
     }
     return false
   }
-  const isProgressItemDisabled = (currentTestConfiguration: TestQuestionMappingAtom | null) => {
-    return !currentTestConfiguration || currentTestConfiguration.test.status !== 'Active'
+  const isProgressItemDisabled = (currentTestConfiguration: TestDefinitionAtom | null) => {
+    return !currentTestConfiguration || currentTestConfiguration.status !== 'Active'
   }
   
 
@@ -55,9 +56,9 @@ export default function TestsLayout({
         <header className="w-full bg-gray-50 border-b px-8 py-4">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-gray-800">
-              <span className="text-gray-600">{currentTestConfiguration?.test.name}</span>
+              <span className="text-gray-600">{getCurrentPageTitle()}</span>
               <span className="mx-2">•</span>
-              {getCurrentPageTitle()}
+              {currentTestConfiguration?.test.name}
             </h1>
           </div>
         </header>

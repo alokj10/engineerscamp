@@ -1,38 +1,77 @@
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { z } from 'zod'
 import { toast } from 'react-hot-toast'
 import { useAtom } from 'jotai'
-import { testNameAtom } from '../../store/myTestAtom'
-import { TestQuestionMappingState } from '../../store/myTestAtom'
+import { TestDefinitionAtom, testNameAtom } from '../../store/myTestAtom'
+import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 
-const settingsSchema = z.object({
-  testName: z.string().min(1, 'Test name is required'),
-  category: z.string(),
-  description: z.string(),
-  language: z.string()
-})
+import { TestQuestionMappingState } from '../../store/myTestAtom'
+import { EditableDropdown } from '@/app/components/editableDropdown'
+import { TestStatus } from '@/app/Constants'
+const testSchema = z.object({
+  name: z.string().min(5, 'Test name must be at least 5 characters'),
+  category: z.string().min(1, 'At least one category is required'),
+  language: z.string().min(1, 'Language is required'),
+  description: z.string().optional(),
+});
 
 export default function Settings() {
-  const [testName, setTestName] = useAtom(testNameAtom)
-  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(TestQuestionMappingState);
-  console.log('currentTestConfiguration', currentTestConfiguration);
-  const [formData, setFormData] = useState({
-    testName: testName,
-    category: 'Uncategorized',
-    description: '',
-    language: 'English'
-  })
+  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
+  const [testCategories, setTestCategories] = useState<string[]>([])
+  
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/mytests/categories')
+      if (response.ok) {
+        const categoriesList = await response.json() as any[]
+        let categories: string[] = []
+        categoriesList.map(c => {
+          categories.push(c.name)
+        })
+        setTestCategories(categories)
+      }
+    } catch (error) {
+      toast.error('Failed to load categories')
+    }
+  }
 
-  const categories = [
-    'Uncategorized',
-    'Technical',
-    'Academic',
-    'Professional',
-    'Certification'
-  ]
+  const addNewCategory = async (newCategory: string) => {
+    try {
+      const response = await fetch('/api/mytests/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newCategory }),
+      })
+      
+      if (response.ok) {
+        await fetchCategories()
+        toast.success('Category added successfully')
+      }
+    } catch (error) {
+      toast.error('Failed to add category')
+    }
+  }
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  console.log('currentTestConfiguration-settings', currentTestConfiguration)
+
+  const handleFieldChange = (field: keyof TestDefinitionAtom, value: string) => {
+    setCurrentTestConfiguration(prev => ({
+      ...prev!,
+      test: {
+        ...prev!.test,
+        [field]: value
+      }
+    }));
+  };
+
 
   const languages = [
     'English',
@@ -41,27 +80,41 @@ export default function Settings() {
     'German',
     'Hindi'
   ]
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
     try {
-      settingsSchema.parse(formData)
-      toast.success('Settings saved successfully')
-      // Handle successful save
+      const validatedData = testSchema.parse(currentTestConfiguration);
+      
+      const response = await fetch('/api/mytests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validatedData),
+      });
+
+      if (response.ok) {
+        const createdTest = await response.json();
+        setCurrentTestConfiguration({
+          ...createdTest,
+          testId: createdTest.id
+        });
+        toast.success('Test created successfully');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to create test');
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        error.errors.forEach((err) => {
-          toast.error(err.message)
-        })
+        toast.error(error.errors[0].message);
       }
     }
-  }
-
+  };
   const getSaveButtonText = () => {
     return currentTestConfiguration?.test.testId === -1 ? 'Create Test' : 'Save'
   }
-
+  
   return (
     <div className="p-8">
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
@@ -69,36 +122,36 @@ export default function Settings() {
           <label className="block text-sm font-medium text-gray-700">Test Name</label>
           <input
             type="text"
-            value={formData.testName}
+            value={currentTestConfiguration?.test.name}
             onChange={(e) => {
-              setFormData({ ...formData, testName: e.target.value })
-              setTestName(e.target.value)
-            } }
+              handleFieldChange('name', e.target.value )
+            }}
             className="w-full px-3 py-2 border rounded-md"
             placeholder="Enter test name"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Category</label>
-          <select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+        <label className="block text-sm font-medium text-gray-700">Category</label>
+
+          <EditableDropdown
+            items={testCategories}
+            selectedItems={[currentTestConfiguration?.test.category]}
+            isMultiSelect={false}
+            isEditable={true}
+            onSelectionChange={(selected) => handleFieldChange('category', selected[0])}
+            onAddItem={addNewCategory}
+          />
+
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700">Description <span className='text-xs text-gray-400'>(Visible to you only)</span> </label>
           <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            value={currentTestConfiguration?.test.description}
+            onChange={(e) => {
+              handleFieldChange('description', e.target.value )
+            }}
             rows={4}
             className="w-full px-3 py-2 border rounded-md"
             placeholder="Enter test description"
@@ -108,8 +161,10 @@ export default function Settings() {
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Test Language</label>
           <select
-            value={formData.language}
-            onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+            value={currentTestConfiguration?.test.language}
+            onChange={(e) => {
+              handleFieldChange('language', e.target.value )
+            }}
             className="w-full px-3 py-2 border rounded-md"
           >
             {languages.map((language) => (

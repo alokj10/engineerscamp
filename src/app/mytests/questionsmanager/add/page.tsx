@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Editor, EditorState, ContentState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import { toast } from 'react-hot-toast'
@@ -137,17 +137,20 @@ export default function AddQuestion() {
       }
     });
     const { setValue } = useForm<QuestionForm>();
+    const [ answerOptions, setAnswerOptions ] = useState<number>(1);
 
     const questionType = watch('type');
 
     const getMinOptions = (type: QuestionType) => {
+      let minOptions = 0;
       switch (type) {
-        case 'Single Choice': return 2;
-        case 'Multiple Choice': return 3;
-        case 'True False': return 2;
-        case 'Survey': return 2;
-        default: return 1;
+        case 'Single Choice': minOptions = 2;
+        case 'Multiple Choice': minOptions =  3;
+        case 'True False': minOptions =  2;
+        case 'Survey': minOptions =  2;
+        default: minOptions =  1;
       }
+      return answerOptions <= minOptions ? minOptions : answerOptions;
     };
   
     const onSubmit = async (data: QuestionForm) => {
@@ -357,6 +360,8 @@ export default function AddQuestion() {
                       const newOptions = [...field.value];
                       newOptions.push({ content: EditorState.createEmpty(), isCorrect: false });
                       field.onChange(newOptions);
+                      setAnswerOptions(newOptions.length);
+                      alert(`Option added! ${newOptions.length}`);
                     }}
                     className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mt-4"
                   >

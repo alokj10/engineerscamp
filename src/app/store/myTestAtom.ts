@@ -1,17 +1,19 @@
 import { atom } from 'jotai'
 import { QuestionAnswerDefinitionAtom } from './questionAnswerDefinitionAtom'
+import { TestStatus } from '../Constants'
 
 export const testNameAtom = atom('Untitled Test')
 
 export interface TestDefinitionAtom {
     testId: number,
     name: string,
-    description: string,
+    description: string | undefined,
     category: string,
-    status: string,
-    questionSortOrder: string,
-    createdBy: string,
-    createdOn: string
+    language: string,
+    status: string | undefined,
+    questionSortOrder: string | undefined,
+    createdBy: string | undefined,
+    createdOn: string | undefined
 }
 
 export interface TestQuestionMappingAtom {
@@ -21,3 +23,20 @@ export interface TestQuestionMappingAtom {
 }
 
 export const TestQuestionMappingState = atom<TestQuestionMappingAtom | null>(null)
+
+
+export const currentTestConfigurationAtom = atom<TestQuestionMappingAtom>({
+  id: 0,
+  test: {
+    testId: 0,
+    name: 'Untitled Test',
+    description: '',
+    category: '',
+    language: 'Englist',
+    status: TestStatus.Draft,
+    questionSortOrder: 'random',
+    createdBy: undefined,
+    createdOn: undefined
+  },
+  questionAnswerDefinitions: []
+})
