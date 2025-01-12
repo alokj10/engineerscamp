@@ -63,7 +63,8 @@ export default function MyTestsPage() {
       const testConfig: TestQuestionMappingAtom = {
         id: testId,
         test: data.test,
-        questionAnswerDefinitions: data.questionAnswerDefinitions
+        questionAnswerDefinitions: data.questionAnswerDefinitions,
+        testRespondents: data.testRespondents
       }
       
       setCurrentTestConfiguration(testConfig)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deleteQuestion } from '@/app/actions/questionActions';
 import { getServerSession } from 'next-auth';
 import { PrismaClient } from "@prisma/client";
+import { logger } from '@/app/utils/logger';
 
 const prisma = new PrismaClient();
 
@@ -32,7 +33,7 @@ export async function DELETE(
   }
 
   try {
-    const questionId = parseInt(params.questionId);
+    const questionId = parseInt(await params.questionId);
     await deleteQuestion(questionId);
     
     return NextResponse.json({ 
@@ -40,6 +41,7 @@ export async function DELETE(
     }, { status: 200 });
     
   } catch (error) {
+    logger.log(`Error deleting question: ${error}`, 'error' );
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Failed to delete question'
     }, { status: 500 });

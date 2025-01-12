@@ -14,6 +14,7 @@
     "@types/draft-js": "^0.11.18",
     "bcrypt": "^5.1.1",
     "draft-js": "^0.11.7",
+    "framer-motion": "^11.17.0",
     "heroicons": "^2.2.0",
     "jotai": "^2.11.0",
     "next": "15.1.3",

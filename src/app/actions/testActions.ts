@@ -1,7 +1,7 @@
 
 'use server'
 import { PrismaClient } from "@prisma/client"
-import { TestDefinitionAtom, TestQuestionMappingAtom } from "../store/myTestAtom"
+import { TestDefinitionAtom, TestQuestionMappingAtom, TestRespondentAtom } from "../store/myTestAtom"
 import { getServerSession } from "next-auth"
 import { getUserDetails } from "./commonActions"
 import { TestStatus } from "../Constants"
@@ -51,34 +51,43 @@ export async function createTest(testDef: TestDefinitionAtom) {
 }
 
 export async function getTestDefinitionById(testId: number): Promise<TestQuestionMappingAtom> {
-  
-    const test = await prisma.tests.findUnique({
-        where: {
+  const test = await prisma.tests.findUnique({
+      where: {
           id: testId,
-        },
-        include: {
-            testQuestionMappings: {
-                include: {
-                    questionAnswerMapping: {
-                        include: {
-                                question: true,
-                                answerOption: true
-                            }
-                        }
-                    }
-                }
-            }
-        })
+      },
+      include: {
+          testQuestionMappings: {
+              include: {
+                  questionAnswerMapping: {
+                      include: {
+                          question: true,
+                          answerOption: true
+                      }
+                  }
+              }
+          },
+          TestAccessCodes: {
+            include: {
+                  respondent: true
+              }
+          }
+        //   respondents: {
+        //       include: {
+        //           testAccessCodes: true
+        //       }
+        //   }
+      }
+  })
     
-    if(test === null) {
-        throw new Error('Test not found')
-    }
+  if(test === null) {
+      throw new Error('Test not found')
+  }
 
-    const createdBy = await getUserDetails(test.createUserId);
+  const createdBy = await getUserDetails(test.createUserId);
     
-    const testDefinition: TestQuestionMappingAtom = {
-        id: test.id,
-        test: {
+  const testDefinition: TestQuestionMappingAtom = {
+      id: test.id,
+      test: {
           testId: test.id,
           name: test.name,
           description: test.description,
@@ -88,39 +97,47 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
           language: 'English',
           createdBy: createdBy?.name || '',
           createdOn: test.createdOn.toISOString()
-        },
-        questionAnswerDefinitions: test.testQuestionMappings.map(tqm => ({
+      },
+      questionAnswerDefinitions: test.testQuestionMappings.map(tqm => ({
           question: {
-            questionId: tqm.questionAnswerMapping.question.id,
-            question: tqm.questionAnswerMapping.question.question,
-            category: tqm.questionAnswerMapping.question.category,
-            type: tqm.questionAnswerMapping.question.type,
-            createdBy: createdBy?.name || '',
-            createdOn: tqm.questionAnswerMapping.question.createdOn.toISOString()
+              questionId: tqm.questionAnswerMapping.question.id,
+              question: tqm.questionAnswerMapping.question.question,
+              category: tqm.questionAnswerMapping.question.category,
+              type: tqm.questionAnswerMapping.question.type,
+              createdBy: createdBy?.name || '',
+              createdOn: tqm.questionAnswerMapping.question.createdOn.toISOString()
           },
           answerOptions: test.testQuestionMappings.reduce((acc, mapping) => {
-            if (mapping.questionAnswerMapping.question.id) {
-              acc.push({
-                answerOptionId: mapping.questionAnswerMapping.answerOption.id,
-                answer: mapping.questionAnswerMapping.answerOption.answer,
-                category: mapping.questionAnswerMapping.answerOption.category,
-                createdBy: createdBy?.name || '',
-                createdOn: mapping.questionAnswerMapping.answerOption.createdOn.toISOString(),
-                isCorrect: mapping.questionAnswerMapping.isCorrect
-              })
-            }
-            return acc
+              if (mapping.questionAnswerMapping.question.id) {
+                  acc.push({
+                      answerOptionId: mapping.questionAnswerMapping.answerOption.id,
+                      answer: mapping.questionAnswerMapping.answerOption.answer,
+                      category: mapping.questionAnswerMapping.answerOption.category,
+                      createdBy: createdBy?.name || '',
+                      createdOn: mapping.questionAnswerMapping.answerOption.createdOn.toISOString(),
+                      isCorrect: mapping.questionAnswerMapping.isCorrect
+                  })
+              }
+              return acc
           }, [] as { 
-            answerOptionId: number; 
-            answer: string; 
-            category: string, 
-            createdBy: string,
-            createdOn: string,
-            isCorrect: boolean }[])
-        }))
-      }
+              answerOptionId: number; 
+              answer: string; 
+              category: string, 
+              createdBy: string,
+              createdOn: string,
+              isCorrect: boolean 
+          }[])
+      })),
+      testRespondents: test.TestAccessCodes.map(tac => ({
+          respondentId: tac.respondentId,
+          firstName: tac.respondent.firstName || '',
+          lastName: tac.respondent.lastName || '',
+          email: tac.respondent.email || '',
+          testId: test.id,
+          accessCode: tac.code || ''
+      }))
+  }
     
-//   const testDefinition: TestQuestionMappingAtom = await response.json()
   return testDefinition
 }
 
@@ -202,4 +219,96 @@ export async function getCategories() {
     })
 
     return categories
+}
+import crypto from 'crypto'
+
+export async function saveRespondents(testId: number, respondents: TestRespondentAtom[]) {
+    const session = await getServerSession()
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session?.user?.email || '' }
+    })
+
+    const salt = 'engineerscamp'
+    const savedRespondents = []
+
+    for (const respondent of respondents) {
+        // Find or create respondent
+        let dbRespondent = await prisma.respondent.upsert({
+            where: { email: respondent.email },
+            update: {
+                firstName: respondent.firstName,
+                lastName: respondent.lastName
+            },
+            create: {
+                email: respondent.email,
+                firstName: respondent.firstName,
+                lastName: respondent.lastName
+            }
+        })
+
+        const timestamp = new Date().toISOString()
+            .replace(/[-:]/g, '')
+            .slice(0, 12)
+
+        const codeString = `${testId}-${dbRespondent.id}-${timestamp}`
+        const hash = crypto
+            .createHmac('sha256', salt)
+            .update(codeString)
+            .digest('hex')
+            .substring(0, 8)
+
+        const accessCode = `${codeString}-${hash}`
+
+        // Create or update test access code
+        const testAccess = await prisma.testAccessCodes.upsert({
+            where: {
+                testId_respondentId: {
+                    testId: testId,
+                    respondentId: dbRespondent.id
+                }
+            },
+            update: {
+                code: accessCode
+            },
+            create: {
+                testId: testId,
+                respondentId: dbRespondent.id,
+                code: accessCode
+            }
+        })
+
+        savedRespondents.push({
+            ...respondent,
+            respondentId: dbRespondent.id,
+            accessCode: accessCode
+        })
+    }
+
+    return savedRespondents
+}
+
+export async function decodeAccessCode(accessCode: string): Promise<{ 
+    testId: number, 
+    respondentId: number, 
+    timestamp: string 
+}> {
+    const salt = 'engineerscamp'
+    const [testId, respondentId, timestamp, hash] = accessCode.split('-')
+
+    const codeString = `${testId}-${respondentId}-${timestamp}`
+    const expectedHash = crypto
+        .createHmac('sha256', salt)
+        .update(codeString)
+        .digest('hex')
+        .substring(0, 8)
+
+    if (hash !== expectedHash) {
+        throw new Error('Invalid access code')
+    }
+
+    return {
+        testId: parseInt(testId),
+        respondentId: parseInt(respondentId),
+        timestamp: timestamp.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1-$2-$3 $4:$5')
+    }
 }

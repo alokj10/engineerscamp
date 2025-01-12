@@ -1,9 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createQuestionAnswer, getQuestionsByCategory } from '@/app/actions/questionActions'
-import { QuestionAnswerDefinitionAtom } from '@/app/store/questionAnswerDefinitionAtom'
 import { getServerSession } from 'next-auth'
 import { PrismaClient } from "@prisma/client"
+import { TestQuestionMappingAtom } from '@/app/store/myTestAtom'
 const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const questionAnswerDef: QuestionAnswerDefinitionAtom = await request.json()
-        const result = await createQuestionAnswer(questionAnswerDef)
+        const testQuestionMapping: TestQuestionMappingAtom = await request.json()
+        const result = await createQuestionAnswer(testQuestionMapping)
         
         return NextResponse.json({ 
             message: 'Question and answers created successfully',

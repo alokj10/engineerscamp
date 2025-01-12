@@ -16,10 +16,20 @@ export interface TestDefinitionAtom {
     createdOn: string | undefined
 }
 
+export interface TestRespondentAtom {
+  respondentId: number,
+  firstName: string,
+  lastName: string,
+  email: string,
+  testId: number,
+  accessCode: string,
+}
+
 export interface TestQuestionMappingAtom {
     id: number,
     test: TestDefinitionAtom,
-    questionAnswerDefinitions: QuestionAnswerDefinitionAtom[]
+    questionAnswerDefinitions: QuestionAnswerDefinitionAtom[],
+    testRespondents: TestRespondentAtom[]
 }
 
 export const TestQuestionMappingState = atom<TestQuestionMappingAtom | null>(null)
@@ -32,11 +42,12 @@ export const currentTestConfigurationAtom = atom<TestQuestionMappingAtom>({
     name: 'Untitled Test',
     description: '',
     category: '',
-    language: 'Englist',
+    language: 'English',
     status: TestStatus.Draft,
     questionSortOrder: 'random',
     createdBy: undefined,
     createdOn: undefined
   },
-  questionAnswerDefinitions: []
+  questionAnswerDefinitions: [],
+  testRespondents: []
 })

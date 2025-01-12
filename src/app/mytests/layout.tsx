@@ -32,7 +32,7 @@ export default function TestsLayout({
   const testConfigItems = [
     { icon: Cog6ToothIcon, label: "General Settings", href: "/mytests/settings" },
     { icon: QuestionMarkCircleIcon, label: "Questions Manager", href: "/mytests/questionsmanager" },
-    { icon: UsersIcon, label: "Test Access", href: "/mytests/access" },
+    { icon: UsersIcon, label: "Test Access", href: "/mytests/testaccess" },
     { icon: ArrowRightCircleIcon, label: "Test Start Page", href: "/mytests/start-page" },
     { icon: AcademicCapIcon, label: "Grading", href: "/mytests/grading" },
     { icon: ClockIcon, label: "Time Settings", href: "/mytests/time" },

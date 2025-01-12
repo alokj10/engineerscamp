@@ -1,0 +1,10 @@
+[2025-01-11T18:00:03.812Z] [ERROR] Error in addOrUpdate: PrismaClientKnownRequestError: 
+Invalid `prisma.answerOptions.create()` invocation in
+/home/alok-jha/Alok/Projects/repos/engineerscamp/.next/server/chunks/[root of the server]__91349e._.js:677:59
+
+  674         }
+  675     });
+  676 } else {
+→ 677     answerOption = await prisma.answerOptions.create(
+The provided value for the column is too long for the column's type. Column: answer
+[2025-01-12T04:48:10.237Z] [ERROR] Error deleting question: TypeError: Cannot read properties of undefined (reading 'findMany')

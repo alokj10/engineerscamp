@@ -44,7 +44,7 @@ model Questions {
 
 model AnswerOptions {
   id                  Int                      @id @default(autoincrement())
-  answer              String
+  answer              String                   @db.Text
   category            String
   createdBy           User                     @relation(fields: [createUserId], references: [id])
   createUserId        Int
@@ -73,6 +73,16 @@ model Tests {
   questionSortOrder    String
   status               String
   testAccessMode       String                 @default("AccessCode")
+  completionMessage    String?                 @db.Text
+  passingScore         Int?                    @default(60)
+  passingScoreUnit     String?                 @default("Percentage")
+  showResults          Boolean?                @default(false)
+  showPassFailMessage  Boolean?                @default(false)
+  showScore            Boolean?                @default(false)
+  showCorrectAnswer    Boolean?                @default(false)
+  passMessage          String?                 @db.Text
+  failMessage          String?                 @db.Text
+  resultRecipients     String?                 @db.Text
   createdBy            User                   @relation(fields: [createUserId], references: [id])
   createUserId         Int
   createdOn            DateTime
@@ -99,12 +109,14 @@ model TestAccessCodes {
   testId       Int
   respondent   Respondent @relation(fields: [respondentId], references: [id])
   respondentId Int
+  code         String     @db.VarChar(255)
+  @@unique(name: "testId_respondentId", [testId, respondentId])
   updatedOn    DateTime   @default(now())
 }
 
 model Respondent {
   id              Int               @id @default(autoincrement())
-  email           String?
+  email           String?           @unique
   firstName       String?
   lastName        String?
   timeZone        String?

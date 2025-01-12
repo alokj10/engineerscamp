@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth';
 import prisma from '@/app/lib/prisma'
 import { getTestDefinitionById } from '@/app/actions/testActions';
+import { logger } from '@/app/utils/logger';
 
 export async function GET(
   request: NextRequest,
@@ -31,8 +32,9 @@ export async function GET(
 
   try {
     const testId = parseInt(params.testId)
+    logger.log(`Fetching test definition for testId: ${testId}`);
     const testDefinition = await getTestDefinitionById(testId);
-    
+    logger.log(`Fetched test definition: ${JSON.stringify(testDefinition)}`);
     return NextResponse.json(testDefinition, { status: 200 });
     
   } catch (error) {
