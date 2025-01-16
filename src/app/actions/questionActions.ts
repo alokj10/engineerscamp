@@ -20,7 +20,6 @@ export async function createQuestionAnswer(testQuestionMappingAtom: TestQuestion
 
     const currentTimestamp = new Date().toISOString()
     const { id, questionAnswerDefinitions, test } = testQuestionMappingAtom;
-    logger.log(`testQuestionMappingAtom: ${JSON.stringify(testQuestionMappingAtom)}`)
     updateTestQuestionMapping(testQuestionMappingAtom)
     return getTestDefinitionById(test.testId)
 

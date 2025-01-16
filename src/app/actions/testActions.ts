@@ -5,6 +5,7 @@ import { TestDefinitionAtom, TestQuestionMappingAtom, TestRespondentAtom } from 
 import { getServerSession } from "next-auth"
 import { getUserDetails } from "./commonActions"
 import { TestStatus } from "../Constants"
+import jwt from "jsonwebtoken"
 
 const prisma = new PrismaClient()
 
@@ -128,14 +129,19 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
               isCorrect: boolean 
           }[])
       })),
-      testRespondents: test.TestAccessCodes.map(tac => ({
+      testRespondents: test.TestAccessCodes.map((tac) => {
+
+        let decodeString = decodeAccessCode(tac.code.split("-")[tac.code.split("-").length-1])
+        let tr = {
           respondentId: tac.respondentId,
           firstName: tac.respondent.firstName || '',
           lastName: tac.respondent.lastName || '',
           email: tac.respondent.email || '',
           testId: test.id,
-          accessCode: tac.code || ''
-      }))
+          accessCode: `${tac.code}, ${JSON.stringify(decodeString)}` || ''
+        }
+        return tr
+      })
   }
     
   return testDefinition
@@ -221,6 +227,8 @@ export async function getCategories() {
     return categories
 }
 import crypto from 'crypto'
+import { logger } from "../utils/logger"
+import { getCurrentDateTime } from "../utils/dateTimeUtils"
 
 export async function saveRespondents(testId: number, respondents: TestRespondentAtom[]) {
     const session = await getServerSession()
@@ -246,19 +254,20 @@ export async function saveRespondents(testId: number, respondents: TestResponden
             }
         })
 
-        const timestamp = new Date().toISOString()
-            .replace(/[-:]/g, '')
-            .slice(0, 12)
-
+        
+        let now = new Date()
+        let timestamp = `${now.getDate()}${now.getMonth()+1}${now.getFullYear().toString().substring(2,4)}${now.getHours()}${now.getMinutes()}`
         const codeString = `${testId}-${dbRespondent.id}-${timestamp}`
-        const hash = crypto
-            .createHmac('sha256', salt)
-            .update(codeString)
-            .digest('hex')
-            .substring(0, 8)
+        // const hash = crypto
+        //     .createHmac('sha256', salt)
+        //     .update(codeString)
+        //     .digest('hex')
+        //     .substring(0, 8)
 
-        const accessCode = `${codeString}-${hash}`
-
+        // const accessCode = `${codeString}-${hash}`
+        let bufferObj = Buffer.from(codeString, "utf8")
+        const accessCode = bufferObj.toString('base64')
+        
         // Create or update test access code
         const testAccess = await prisma.testAccessCodes.upsert({
             where: {
@@ -287,28 +296,75 @@ export async function saveRespondents(testId: number, respondents: TestResponden
     return savedRespondents
 }
 
-export async function decodeAccessCode(accessCode: string): Promise<{ 
+export async function saveGradingSettings(testId: number, settings: TestDefinitionAtom) {
+    const session = await getServerSession()
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session?.user?.email || '' }
+    })
+
+    logger.info(`[saveGradingSettings] Starting update for test ${testId}`)
+
+    const updatedTest = await prisma.tests.update({
+        where: { id: testId },
+        data: {
+            completionMessage: settings.completionMessage,
+            passingScore: settings.passingScore,
+            passingScoreUnit: settings.passingScoreUnit,
+            showResults: settings.showResults,
+            showPassFailMessage: settings.showPassFailMessage,
+            showScore: settings.showScore,
+            showCorrectAnswer: settings.showCorrectAnswer,
+            passMessage: settings.passMessage,
+            failMessage: settings.failMessage,
+            resultRecipients: settings.resultRecipients,
+            updatedOn: getCurrentDateTime()
+        }
+    })
+
+    logger.info(`[saveGradingSettings] Successfully updated grading settings for test ${testId}`)
+    return updatedTest
+}
+
+function decodeAccessCode(accessCode: string): { 
     testId: number, 
     respondentId: number, 
     timestamp: string 
-}> {
-    const salt = 'engineerscamp'
-    const [testId, respondentId, timestamp, hash] = accessCode.split('-')
+} {
+    // const salt = 'engineerscamp'
+    // const [testId, respondentId, timestamp, hash] = accessCode.split('-')
 
-    const codeString = `${testId}-${respondentId}-${timestamp}`
-    const expectedHash = crypto
-        .createHmac('sha256', salt)
-        .update(codeString)
-        .digest('hex')
-        .substring(0, 8)
+    // const codeString = `${testId}-${respondentId}-${timestamp}`
+    // const expectedHash = crypto
+    //     .createHmac('sha256', salt)
+    //     .update(codeString)
+    //     .digest('hex')
+    //     .substring(0, 8)
 
-    if (hash !== expectedHash) {
-        throw new Error('Invalid access code')
+    // if (hash !== expectedHash) {
+    //     throw new Error('Invalid access code')
+    // }
+    try
+    {
+        let bufferObj = Buffer.from(accessCode, "base64")
+        let codeString = bufferObj.toString('utf8')
+        const [testId, respondentId, timestamp] = codeString.split('-')
+        // const decodeObj = jwt.verify(accessCode, 'engineerscamp') as {
+        //     testId: string | '-1',
+        //     respondentId: string | '-1',
+        //     timestamp: string | ''
+        // }
+        return {
+            testId: parseInt(testId),
+            respondentId: parseInt(respondentId),
+            timestamp: timestamp?.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1-$2-$3 $4:$5')
+        }
     }
-
-    return {
-        testId: parseInt(testId),
-        respondentId: parseInt(respondentId),
-        timestamp: timestamp.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1-$2-$3 $4:$5')
+    catch (error) {
+        // throw new Error('Invalid access code: ' + error)
+        return {
+            testId: -1,
+            respondentId: -1,
+            timestamp: ''
+        }
     }
 }

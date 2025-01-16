@@ -12,6 +12,16 @@ export interface TestDefinitionAtom {
     language: string,
     status: string | undefined,
     questionSortOrder: string | undefined,
+    completionMessage:     string | undefined,
+    passingScore:     number | undefined,
+    passingScoreUnit:     string | undefined,
+    showResults:     boolean | undefined,
+    showPassFailMessage:     boolean | undefined,
+    showScore:     boolean | undefined,
+    showCorrectAnswer:     boolean | undefined,
+    passMessage:     string | undefined,
+    failMessage:     string | undefined,
+    resultRecipients:     string | undefined,
     createdBy: string | undefined,
     createdOn: string | undefined
 }

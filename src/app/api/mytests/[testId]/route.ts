@@ -31,10 +31,10 @@ export async function GET(
   }
 
   try {
-    const testId = parseInt(params.testId)
-    logger.log(`Fetching test definition for testId: ${testId}`);
-    const testDefinition = await getTestDefinitionById(testId);
-    logger.log(`Fetched test definition: ${JSON.stringify(testDefinition)}`);
+    const {testId} = await params;
+    const testIdParam = parseInt(testId)
+    logger.log(`Fetching test definition for testId: ${testIdParam}`);
+    const testDefinition = await getTestDefinitionById(testIdParam);
     return NextResponse.json(testDefinition, { status: 200 });
     
   } catch (error) {
