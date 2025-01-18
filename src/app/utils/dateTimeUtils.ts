@@ -33,3 +33,22 @@ export const getCurrentDateTimeLong = (timezone?: string): string => {
 export const getActiveTimezone = (): string => {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 };
+
+export const getIsoDateTimeString = (): string => {
+  const date = new Date();
+  return date.toISOString();
+};
+
+export const convertToDateTime = (date: string | undefined): Date | undefined => {
+  if (!date) {
+    return undefined;
+  }
+  return new Date(date);
+};
+
+export const convertDateTimeToString = (date: Date | null): string | undefined => {
+  if (!date) {
+    return undefined;
+  }
+  return date.toISOString();
+};

@@ -158,7 +158,7 @@ export async function deleteQuestion(questionId: number) {
 
 async function updateTestQuestionMapping(
   testQuestionMappingAtom: TestQuestionMappingAtom) {
-  logger.log('Starting updateTestQuestionMapping')
+  logger.info('Starting updateTestQuestionMapping')
   const { questionAnswerDefinitions, test } = testQuestionMappingAtom;
   // if(questionAnswerDefinitions && questionAnswerDefinitions.length > 0
   //   && test && test.testId > 0
@@ -175,14 +175,14 @@ async function addOrUpdate(questionAnswerDefinition: QuestionAnswerDefinitionAto
   test: TestDefinitionAtom
 ) {
   try {
-    logger.log('Starting question update/create operation')
+    logger.info('Starting question update/create operation')
     
     const session = await getServerSession()
     const currentUser = await prisma.user.findUnique({
       where: { email: session?.user?.email || '' }
     })
     
-    logger.log(`User ${currentUser?.email} performing operation`)
+    logger.info(`User ${currentUser?.email} performing operation`)
 
     const currentTimestamp = new Date().toISOString()
   
@@ -280,10 +280,10 @@ async function addOrUpdate(questionAnswerDefinition: QuestionAnswerDefinitionAto
           }
     }))
     
-    logger.log('Question operation completed successfully')
+    logger.info('Question operation completed successfully')
     return question
   } catch (error) {
-    logger.log(`Error in addOrUpdate: ${error}`, 'error')
+    logger.error(`Error in addOrUpdate: ${error}`)
     throw error
   }
 }

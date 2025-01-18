@@ -41,7 +41,7 @@ export async function DELETE(
     }, { status: 200 });
     
   } catch (error) {
-    logger.log(`Error deleting question: ${error}`, 'error' );
+    logger.error(`Error deleting question: ${error}`);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Failed to delete question'
     }, { status: 500 });

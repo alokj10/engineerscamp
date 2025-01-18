@@ -33,7 +33,7 @@ export async function GET(
   try {
     const {testId} = await params;
     const testIdParam = parseInt(testId)
-    logger.log(`Fetching test definition for testId: ${testIdParam}`);
+    logger.info(`Fetching test definition for testId: ${testIdParam}`);
     const testDefinition = await getTestDefinitionById(testIdParam);
     return NextResponse.json(testDefinition, { status: 200 });
     

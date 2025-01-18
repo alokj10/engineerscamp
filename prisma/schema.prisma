@@ -83,6 +83,13 @@ model Tests {
   passMessage          String?                 @db.Text
   failMessage          String?                 @db.Text
   resultRecipients     String?                 @db.Text
+  testDurationMethod   String?                 
+  testDurationForTest  String?
+  testDurationForQuestion String?
+  testActivationMethod String?
+  manualActivationPeriod   String?
+  scheduledActivationStartsOn   DateTime?
+  scheduledActivationEndsOn DateTime?
   createdBy            User                   @relation(fields: [createUserId], references: [id])
   createUserId         Int
   createdOn            DateTime

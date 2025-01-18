@@ -5,7 +5,6 @@ import { TestDefinitionAtom, TestQuestionMappingAtom, TestRespondentAtom } from 
 import { getServerSession } from "next-auth"
 import { getUserDetails } from "./commonActions"
 import { TestStatus } from "../Constants"
-import jwt from "jsonwebtoken"
 
 const prisma = new PrismaClient()
 
@@ -96,6 +95,23 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
           status: test.status,
           questionSortOrder: test.questionSortOrder,
           language: 'English',
+          completionMessage: test.completionMessage || '',
+          passingScore:     test.passingScore || undefined,
+          passingScoreUnit:     test.passingScoreUnit || '',
+          showResults:     test.showResults || undefined,
+          showPassFailMessage:     test.showPassFailMessage || undefined,
+          showScore:     test.showScore || undefined,
+          showCorrectAnswer:     test.showCorrectAnswer || undefined,
+          passMessage:     test.passMessage || '',
+          failMessage:     test.failMessage || '',
+          resultRecipients:     test.resultRecipients || '',
+          testActivationMethod:     test.testActivationMethod || '',
+          manualActivationPeriod:     test.manualActivationPeriod || undefined,
+          testDurationMethod:     test.testDurationMethod || '',
+          testDurationForTest:     test.testDurationForTest || undefined,
+          testDurationForQuestion:     test.testDurationForQuestion || undefined,
+          scheduledActivationStartsOn: convertDateTimeToString(test.scheduledActivationStartsOn) || undefined,
+          scheduledActivationEndsOn:   convertDateTimeToString(test.scheduledActivationEndsOn) || undefined,
           createdBy: createdBy?.name || '',
           createdOn: test.createdOn.toISOString()
       },
@@ -228,7 +244,7 @@ export async function getCategories() {
 }
 import crypto from 'crypto'
 import { logger } from "../utils/logger"
-import { getCurrentDateTime } from "../utils/dateTimeUtils"
+import { convertDateTimeToString, convertToDateTime, getCurrentDateTime, getIsoDateTimeString } from "../utils/dateTimeUtils"
 
 export async function saveRespondents(testId: number, respondents: TestRespondentAtom[]) {
     const session = await getServerSession()
@@ -317,11 +333,37 @@ export async function saveGradingSettings(testId: number, settings: TestDefiniti
             passMessage: settings.passMessage,
             failMessage: settings.failMessage,
             resultRecipients: settings.resultRecipients,
-            updatedOn: getCurrentDateTime()
+            updatedOn: getIsoDateTimeString()
         }
     })
 
     logger.info(`[saveGradingSettings] Successfully updated grading settings for test ${testId}`)
+    return updatedTest
+}
+
+export async function saveTimeSettings(testId: number, settings: TestDefinitionAtom) {
+    const session = await getServerSession()
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session?.user?.email || '' }
+    })
+
+    logger.info(`Updating time settings for test ${testId}: ${settings.manualActivationPeriod}`)
+
+    const updatedTest = await prisma.tests.update({
+        where: { id: testId },
+        data: {
+            testActivationMethod: settings.testActivationMethod,
+            manualActivationPeriod: settings.manualActivationPeriod || null,
+            testDurationMethod: settings.testDurationMethod,
+            testDurationForTest: settings.testDurationForTest || null,
+            testDurationForQuestion: settings.testDurationForQuestion || null,
+            scheduledActivationStartsOn: convertToDateTime(settings.scheduledActivationStartsOn) || null,
+            scheduledActivationEndsOn: convertToDateTime(settings.scheduledActivationEndsOn) || null,
+            updatedOn: getIsoDateTimeString()
+        }
+    })
+
+    logger.info(`Successfully updated time settings for test ${testId}`)
     return updatedTest
 }
 
