@@ -1,10 +1,11 @@
 'use client'
 import Link from "next/link"
+import { useState } from "react"
 import { AcademicCapIcon } from "../page"
 import { usePathname } from 'next/navigation'
 import { atom, useAtom } from 'jotai'
 import { currentTestConfigurationAtom, TestDefinitionAtom } from '@/app/store/myTestAtom'
-import { Toaster } from "react-hot-toast"
+import { Toaster, toast } from "react-hot-toast"
 
 
 export default function TestsLayout({
@@ -13,13 +14,39 @@ export default function TestsLayout({
   children: React.ReactNode
 }) {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
-  console.log('currentTestConfiguration-layout', currentTestConfiguration)
+  // Modify the activation button click handler
+const [isPopupOpen, setIsPopupOpen] = useState(false);
+const [currentTestConfig] = useAtom(currentTestConfigurationAtom);
+
+const handleActivateClick = async () => {
+  setIsPopupOpen(true);
+};
+
+const handleConfirmActivation = async () => {
+  try {
+    const response = await fetch(`/api/mytests/${currentTestConfig.test.testId}/activation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(currentTestConfig),
+    });
+
+    if (!response.ok) throw new Error('Activation failed');
+
+    toast.success('Test activated successfully');
+    setIsPopupOpen(false);
+  } catch (error) {
+    toast.error('Failed to activate test');
+  }
+};
   const pathname = usePathname()
   
   const showSidebar = pathname !== '/mytests'
 
   const isOptionDisabled = (href: string) => {
-    if (!currentTestConfiguration || currentTestConfiguration.testId === -1) {
+    if (!currentTestConfiguration || currentTestConfiguration.test.testId === -1
+    ) {
       return href !== '/mytests/settings'
     }
     return false
@@ -27,6 +54,7 @@ export default function TestsLayout({
   const isProgressItemDisabled = (currentTestConfiguration: TestDefinitionAtom | null) => {
     return !currentTestConfiguration || currentTestConfiguration.status !== 'Active'
   }
+
   
 
   const testConfigItems = [
@@ -82,15 +110,23 @@ export default function TestsLayout({
                   </Link>
                 ))}
                 <button 
+                  onClick={handleActivateClick}
                   className={`w-full mt-4 py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200
-                    ${isOptionDisabled('') 
+                    ${isOptionDisabled('') || currentTestConfig.test.status === 'ACTIVE'
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-green-600 hover:bg-green-700 text-white'}`}
-                  disabled={isOptionDisabled('')}
+                  disabled={isOptionDisabled('') || currentTestConfig.test.status === 'ACTIVE'}
                 >
                   <PlayIcon className="mr-3 h-5 w-5" />
                   <span>Activate Test</span>
                 </button>
+
+                <ActivationSummaryPopup 
+                  isOpen={isPopupOpen}
+                  onClose={() => setIsPopupOpen(false)}
+                  onConfirm={handleConfirmActivation}
+                  testConfig={currentTestConfig}
+                />
               </div>
               <div className="h-px bg-gray-200 w-full my-4"></div>
               <div>
@@ -186,3 +222,111 @@ export function InformationCircleIcon() {
           <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
         </svg>
 }
+
+
+// Add this component in the same file
+const ActivationSummaryPopup = ({ isOpen, onClose, onConfirm, testConfig }) => {
+  if (!isOpen) return null;
+
+  const questionsByCategory = testConfig.questionAnswerDefinitions.reduce((acc, q) => {
+    acc[q.question.category] = (acc[q.question.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const questionsByType = testConfig.questionAnswerDefinitions.reduce((acc, q) => {
+    acc[q.question.type] = (acc[q.question.type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const calculateEndDate = (period: string): string => {
+    if (!period) return 'Not set';
+    
+    const now = new Date();
+    const endDate = new Date(now);
+    
+    // Parse the period string (e.g., "2M 15d 8h 30min")
+    const matches = period.match(/(\d+)(M|d|h|min)/g);
+    
+    if (matches) {
+      matches.forEach(match => {
+        const value = parseInt(match);
+        const unit = match.replace(/\d+/g, '');
+        
+        switch (unit) {
+          case 'M':
+            endDate.setMonth(endDate.getMonth() + value);
+            break;
+          case 'd':
+            endDate.setDate(endDate.getDate() + value);
+            break;
+          case 'h':
+            endDate.setHours(endDate.getHours() + value);
+            break;
+          case 'min':
+            endDate.setMinutes(endDate.getMinutes() + value);
+            break;
+        }
+      });
+    }
+    
+    return endDate.toLocaleString();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <h2 className="text-2xl font-bold mb-4">Test Activation Summary</h2>
+        
+        <div className="grid gap-4 mb-4">
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-semibold mb-2">Test Details</h3>
+            <p>Name: {testConfig.test.name}</p>
+            <p>Category: {testConfig.test.category}</p>
+            <p>Language: {testConfig.test.language}</p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-semibold mb-2">Questions Summary</h3>
+            <div className="mt-2">
+              <h4 className="font-medium">Categories:</h4>
+              {Object.entries(questionsByCategory).map(([category, count]) => (
+                <p key={category}>{category}: {count}</p>
+              ))}
+            </div>
+            <div className="mt-2">
+              <h4 className="font-medium">Question Types:</h4>
+              {Object.entries(questionsByType).map(([type, count]) => (
+                <p key={type}>{type}: {count}</p>
+              ))}
+            </div>
+            <p className="font-bold">Total Questions: {testConfig.questionAnswerDefinitions.length}</p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded">
+            <h3 className="font-semibold mb-2">Test Configuration</h3>
+            <p>Total Respondents: {testConfig.testRespondents.length}</p>
+            <p>Passing Score: {testConfig.test.passingScore} {testConfig.test.passingScoreUnit}</p>
+            <p>Active Period: {testConfig.test.manualActivationPeriod}</p>
+            <p>Active Period: {testConfig.test.manualActivationPeriod} (Ends: {calculateEndDate(testConfig.test.manualActivationPeriod)})</p>
+
+        </div>
+        </div>
+
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Activate Test
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth"
 import { TestDefinitionAtom, TestQuestionMappingAtom } from "../store/myTestAtom"
 import { getTestDefinitionById } from "./testActions"
 import { logger } from "../utils/logger"
+import { getUserDetails } from "./commonActions"
+import { convertDateTimeToString, getIsoDateTimeString } from "../utils/dateTimeUtils"
 
 const prisma = new PrismaClient()
 
@@ -278,6 +280,17 @@ async function addOrUpdate(questionAnswerDefinition: QuestionAnswerDefinitionAto
               }
             })
           }
+
+          // Update test status to SETUPINPROGRESS
+          await prisma.tests.update({
+            where: {
+              id: test.testId
+            },
+            data: {
+              status: 'SETUPINPROGRESS',
+              updatedOn: getIsoDateTimeString()
+            }
+          })
     }))
     
     logger.info('Question operation completed successfully')
@@ -286,4 +299,46 @@ async function addOrUpdate(questionAnswerDefinition: QuestionAnswerDefinitionAto
     logger.error(`Error in addOrUpdate: ${error}`)
     throw error
   }
+}
+
+export async function getQuestionsByTestId(testId: number): Promise<QuestionAnswerDefinitionAtom[]> {
+  const testQuestionMappings = await prisma.testQuestionMappings.findMany({
+    where: {
+      testId: testId
+    },
+    include: {
+      questionAnswerMapping: {
+        include: {
+          question: true,
+          answerOption: true
+        }
+      }
+    }
+  })
+
+  const questionAnswerDefs: QuestionAnswerDefinitionAtom[] = []; 
+  testQuestionMappings.map(async tqm => {
+    let questionCreatedBy = await getUserDetails(tqm.questionAnswerMapping.question.createUserId);
+    let answerCreatedBy = await getUserDetails(tqm.questionAnswerMapping.answerOption.createUserId);
+    questionAnswerDefs.push({
+      question: {
+        questionId: tqm.questionAnswerMapping.question.id,
+        question: tqm.questionAnswerMapping.question.question,
+        category: tqm.questionAnswerMapping.question.category,
+        type: tqm.questionAnswerMapping.question.type,
+        createdBy: questionCreatedBy?.name || '',
+        createdOn: convertDateTimeToString(tqm.questionAnswerMapping.question.createdOn) || ''
+      },
+      answerOptions: [{
+        answerOptionId: tqm.questionAnswerMapping.answerOption.id,
+        answer: tqm.questionAnswerMapping.answerOption.answer,
+        category: tqm.questionAnswerMapping.answerOption.category,
+        isCorrect: tqm.questionAnswerMapping.isCorrect,
+        createdBy: answerCreatedBy?.name || '',
+        createdOn: convertDateTimeToString(tqm.questionAnswerMapping.answerOption.createdOn) || ''
+      }]
+    })
+  })
+
+  return questionAnswerDefs
 }

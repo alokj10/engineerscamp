@@ -90,6 +90,7 @@ model Tests {
   manualActivationPeriod   String?
   scheduledActivationStartsOn   DateTime?
   scheduledActivationEndsOn DateTime?
+  activatedOn          DateTime?
   createdBy            User                   @relation(fields: [createUserId], references: [id])
   createUserId         Int
   createdOn            DateTime

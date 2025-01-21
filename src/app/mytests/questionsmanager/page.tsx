@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { QuestionAnswerDefinitionAtom } from '@/app/store/questionAnswerDefinitionAtom'
 import { Editor, EditorState, convertFromRaw } from "draft-js";
 import { toast } from 'react-hot-toast';
+import { useAtom } from 'jotai'
+import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 
 
 interface Question {
@@ -26,6 +28,7 @@ export default function QuestionsManager() {
   const [showMenu, setShowMenu] = useState<number | null>(null)
   const [filteredQuestions, setFilteredQuestions] = useState<QuestionAnswerDefinitionAtom[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const router = useRouter();
 
   const handleDeleteClick = (questionId: number) => {
@@ -79,11 +82,19 @@ export default function QuestionsManager() {
     }
   }
 
+  // useEffect(() => {
+  //   fetchQuestions()
+  // }, [selectedCategory, searchText])
+
   useEffect(() => {
-    fetchQuestions()
-  }, [selectedCategory, searchText])
+    setFilteredQuestions(currentTestConfiguration.questionAnswerDefinitions)
+  }, [])
 
   const categories = ['All', 'Programming', 'Database', 'Networking']
+
+  const canAddEditQuestions = () => {
+    return currentTestConfiguration.test.status !== 'ACTIVE'
+  }
 
   // const filteredQuestions = questions.filter(q => {
   //   const matchesCategory = selectedCategory === 'All' || q.category === selectedCategory
@@ -145,7 +156,11 @@ export default function QuestionsManager() {
               </button>
             )}
             <button
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+            disabled={!canAddEditQuestions()}
+              className={` ${!canAddEditQuestions()
+                      ? 'bg-gray-400 cursor-not-allowed px-4 py-2 rounded-lg flex items-center gap-2'
+                      : 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700'}
+               `}
               onClick={() => router.push('/mytests/questionsmanager/add')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -178,16 +193,22 @@ export default function QuestionsManager() {
                   </button>
                   {showMenu === question.question.questionId && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-10">
-                      <button className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
+                      <button 
+                      disabled={!canAddEditQuestions()}
+                      className={`${!canAddEditQuestions() ? 'cursor-not-allowed px-4 py-2 rounded-lg flex items-center gap-2' 
+                        : 'w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2'}`}
+                        >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                         </svg>
                         Edit
                       </button>
                       <button 
+                      disabled={!canAddEditQuestions()}
                         onClick={() => handleDeleteClick(question.question.questionId)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2"
-                      >
+                        className={`${!canAddEditQuestions() ? 'cursor-not-allowed px-4 py-2 rounded-lg flex items-center gap-2' 
+                          : 'w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2'}`}
+                          >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>

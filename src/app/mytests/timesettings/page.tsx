@@ -62,7 +62,7 @@ export default function TimeSettings() {
 
   const parseManualPeriod = (period?: string) => {
     if (!period) return { months: 12, days: 0, hours: 0, minutes: 0 }
-    const matches = period.match(/(\d+)m\s+(\d+)d\s+(\d+)h\s+(\d+)m/)
+    const matches = period.match(/(\d+)M\s+(\d+)d\s+(\d+)h\s+(\d+)min/)
     if (!matches) return { months: 12, days: 0, hours: 0, minutes: 0 }
     return {
       months: parseInt(matches[1]),
@@ -121,7 +121,7 @@ export default function TimeSettings() {
           testDurationForTest: durationOption === 'complete' ? getDuration(durationHours, durationMinutes) : undefined,
           testDurationForQuestion: durationOption === 'perQuestion' ? getDuration(durationHours, durationMinutes) : undefined,
           testActivationMethod: activationOption,
-          manualActivationPeriod: activationOption === 'manual' ? `${months}m ${days}d ${hours}h ${minutes}m` : undefined,
+          manualActivationPeriod: activationOption === 'manual' ? `${months}M ${days}d ${hours}h ${minutes}min` : undefined,
           scheduledActivationStartsOn: activationOption === 'scheduled' ? activationStartTime : undefined,
           scheduledActivationEndsOn: activationOption === 'scheduled' ? activationEndTime : undefined
         }

@@ -5,6 +5,7 @@ import { TestDefinitionAtom, TestQuestionMappingAtom, TestRespondentAtom } from 
 import { getServerSession } from "next-auth"
 import { getUserDetails } from "./commonActions"
 import { TestStatus } from "../Constants"
+import nodemailer from 'nodemailer'
 
 const prisma = new PrismaClient()
 
@@ -21,7 +22,7 @@ export async function createTest(testDef: TestDefinitionAtom) {
     const currentTimestamp = new Date().toISOString()
 
     if (testDef.testId > 0) {
-        const test = await prisma.tests.update({
+        await prisma.tests.update({
             where: {
                 id: testDef.testId
             },
@@ -32,7 +33,10 @@ export async function createTest(testDef: TestDefinitionAtom) {
                 questionSortOrder: testDef.questionSortOrder
             }
         })
-        return test
+        return {
+            testId: testDef.testId, 
+            message: 'Test updated successfully' 
+        }
     }
 
     const test = await prisma.tests.create({
@@ -47,7 +51,10 @@ export async function createTest(testDef: TestDefinitionAtom) {
         }
     })
 
-    return test
+    return {
+        testId: test.id,
+        message: 'Test created successfully'
+    }
 }
 
 export async function getTestDefinitionById(testId: number): Promise<TestQuestionMappingAtom> {
@@ -85,6 +92,37 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
 
   const createdBy = await getUserDetails(test.createUserId);
     
+    // const answersGroupByQuestion = Object.groupBy(test.testQuestionMappings, (qm) => {
+    //     return qm.questionAnswerMapping.questionId
+    // })
+    // let questionAnswerDefinitions: QuestionAnswerDefinitionAtom[] = []
+    
+    // Object.keys(answersGroupByQuestion).forEach(async questionId => {
+    //     let answers = answersGroupByQuestion[Number(questionId)]
+    //     if (answers && answers.length > 0) {
+    //         let createdBy = await getUserDetails(answers[0].questionAnswerMapping.answerOption.createUserId)
+    //         questionAnswerDefinitions.push({
+    //             question: {
+    //                 questionId: Number(questionId),
+    //                 question: answers[0].questionAnswerMapping.question.question,
+    //                 category: answers[0].questionAnswerMapping.question.category,
+    //                 createdBy: createdBy?.name || '',
+    //                 type: answers[0].questionAnswerMapping.question.type,
+    //                 createdOn: convertDateTimeToString(answers[0].questionAnswerMapping.question.createdOn) || ''
+    //             },
+    //             answerOptions: answers.map(a => {
+    //                 return {
+    //                     answerOptionId: a.questionAnswerMapping.answerOption.id,
+    //                     answer: a.questionAnswerMapping.answerOption.answer,
+    //                     isCorrect: a.questionAnswerMapping.isCorrect,
+    //                     createdBy: createdBy?.name || '',
+    //                     category: a.questionAnswerMapping.answerOption.category,
+    //                     createdOn: convertDateTimeToString(a.questionAnswerMapping.answerOption.createdOn) || ''
+    //                 }
+    //             })
+    //         })
+    //     }
+    // })
   const testDefinition: TestQuestionMappingAtom = {
       id: test.id,
       test: {
@@ -115,36 +153,36 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
           createdBy: createdBy?.name || '',
           createdOn: test.createdOn.toISOString()
       },
-      questionAnswerDefinitions: test.testQuestionMappings.map(tqm => ({
-          question: {
-              questionId: tqm.questionAnswerMapping.question.id,
-              question: tqm.questionAnswerMapping.question.question,
-              category: tqm.questionAnswerMapping.question.category,
-              type: tqm.questionAnswerMapping.question.type,
-              createdBy: createdBy?.name || '',
-              createdOn: tqm.questionAnswerMapping.question.createdOn.toISOString()
-          },
-          answerOptions: test.testQuestionMappings.reduce((acc, mapping) => {
-              if (mapping.questionAnswerMapping.question.id) {
-                  acc.push({
-                      answerOptionId: mapping.questionAnswerMapping.answerOption.id,
-                      answer: mapping.questionAnswerMapping.answerOption.answer,
-                      category: mapping.questionAnswerMapping.answerOption.category,
-                      createdBy: createdBy?.name || '',
-                      createdOn: mapping.questionAnswerMapping.answerOption.createdOn.toISOString(),
-                      isCorrect: mapping.questionAnswerMapping.isCorrect
-                  })
-              }
-              return acc
-          }, [] as { 
-              answerOptionId: number; 
-              answer: string; 
-              category: string, 
-              createdBy: string,
-              createdOn: string,
-              isCorrect: boolean 
-          }[])
-      })),
+    //   questionAnswerDefinitions: test.testQuestionMappings.map(tqm => ({
+    //       question: {
+    //           questionId: tqm.questionAnswerMapping.question.id,
+    //           question: tqm.questionAnswerMapping.question.question,
+    //           category: tqm.questionAnswerMapping.question.category,
+    //           type: tqm.questionAnswerMapping.question.type,
+    //           createdBy: createdBy?.name || '',
+    //           createdOn: tqm.questionAnswerMapping.question.createdOn.toISOString()
+    //       },
+    //       answerOptions: test.testQuestionMappings.reduce((acc, mapping) => {
+    //           if (mapping.questionAnswerMapping.question.id === tqm.questionAnswerMapping.question.id) {
+    //               acc.push({
+    //                   answerOptionId: mapping.questionAnswerMapping.answerOption.id,
+    //                   answer: mapping.questionAnswerMapping.answerOption.answer,
+    //                   category: mapping.questionAnswerMapping.answerOption.category,
+    //                   createdBy: createdBy?.name || '',
+    //                   createdOn: mapping.questionAnswerMapping.answerOption.createdOn.toISOString(),
+    //                   isCorrect: mapping.questionAnswerMapping.isCorrect
+    //               })
+    //           }
+    //           return acc
+    //       }, [] as { 
+    //           answerOptionId: number; 
+    //           answer: string; 
+    //           category: string, 
+    //           createdBy: string,
+    //           createdOn: string,
+    //           isCorrect: boolean 
+    //       }[])
+      questionAnswerDefinitions: getQuestionAnswers(test.testQuestionMappings),
       testRespondents: test.TestAccessCodes.map((tac) => {
 
         let decodeString = decodeAccessCode(tac.code.split("-")[tac.code.split("-").length-1])
@@ -161,6 +199,39 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
   }
     
   return testDefinition
+}
+
+function getQuestionAnswers(questionMappings: any[]): QuestionAnswerDefinitionAtom[] {
+    const groupedByQuestion = questionMappings.reduce((acc, mapping) => {
+      if (!acc[mapping.questionAnswerMapping.questionId]) {
+        acc[mapping.questionAnswerMapping.questionId] = {
+          question: {
+            questionId: mapping.questionAnswerMapping.question.id,
+            question: mapping.questionAnswerMapping.question.question,
+            category: mapping.questionAnswerMapping.question.category,
+            type: mapping.questionAnswerMapping.question.type,
+            createdOn: mapping.questionAnswerMapping.question.createdOn
+          }, 
+        //   mapping.questionAnswerMapping.question as QuestionDefinition,
+          answerOptions: []
+        }
+      }
+      acc[mapping.questionAnswerMapping.questionId]
+            .answerOptions
+            .push({
+                answerOptionId: mapping.questionAnswerMapping.answerOption.answerOptionId,
+                answer: mapping.questionAnswerMapping.answerOption.answer,
+                category: mapping.questionAnswerMapping.answerOption.category,
+                createdOn: mapping.questionAnswerMapping.answerOption.createdOn,
+                isCorrect: mapping.questionAnswerMapping.isCorrect
+            })
+      console.log('acc', acc)
+      return acc
+    }, {} as Record<string, QuestionAnswerDefinitionAtom>)
+
+    const result = Object.values(groupedByQuestion) as QuestionAnswerDefinitionAtom[]
+    console.log('result', result)
+    return result
 }
 
 export async function getTests(): Promise<TestDefinitionAtom[]> {
@@ -245,6 +316,7 @@ export async function getCategories() {
 import crypto from 'crypto'
 import { logger } from "../utils/logger"
 import { convertDateTimeToString, convertToDateTime, getCurrentDateTime, getIsoDateTimeString } from "../utils/dateTimeUtils"
+import { AnswerOptionDefinition, QuestionAnswerDefinitionAtom, QuestionDefinition } from "../store/questionAnswerDefinitionAtom"
 
 export async function saveRespondents(testId: number, respondents: TestRespondentAtom[]) {
     const session = await getServerSession()
@@ -366,6 +438,111 @@ export async function saveTimeSettings(testId: number, settings: TestDefinitionA
     logger.info(`Successfully updated time settings for test ${testId}`)
     return updatedTest
 }
+
+export async function activateTest(testId: number) {
+    const session = await getServerSession()
+    const currentUser = await prisma.user.findUnique({
+        where: { email: session?.user?.email || '' }
+    })
+
+    if (!currentUser) {
+        throw new Error('Unauthorized: User not found')
+    }
+
+    const currentTest = await prisma.tests.findUnique({
+        where: { id: testId },
+        include: {
+            testQuestionMappings: true,
+            TestAccessCodes: {
+                include: {
+                    respondent: true
+                }
+            }
+        }
+    })
+
+    if (!currentTest) {
+        throw new Error('Test not found')
+    }
+
+    if (currentTest.status !== 'SETUPINPROGRESS') {
+        throw new Error('Test can only be activated from SETUPINPROGRESS status')
+    }
+
+    if (currentTest.testQuestionMappings.length === 0) {
+        throw new Error('Test must have at least one question before activation')
+    }
+
+    if (currentTest.testAccessMode === 'AccessCode' && currentTest.TestAccessCodes.length === 0) {
+        throw new Error('Test with AccessCode mode must have at least one access code')
+    }
+
+    const currentDateTime = new Date().toISOString()
+
+    const updatedTest = await prisma.tests.update({
+        where: { id: testId },
+        data: {
+            status: 'ACTIVE',
+            updatedOn: currentDateTime,
+            activatedOn: currentDateTime
+        }
+    })
+
+    let respondents: TestRespondentAtom[] = []
+    if (currentTest.testAccessMode === 'AccessCode') {
+        currentTest.TestAccessCodes.map(accessCode => {
+            respondents.push({
+                testId: accessCode.testId,
+                respondentId: accessCode.respondentId,
+                accessCode: accessCode.code,
+                firstName: accessCode.respondent.firstName || '',
+                lastName: accessCode.respondent.lastName || '',
+                email: accessCode.respondent.email || '',
+            })
+        })
+        if (respondents && respondents.length > 0) {
+            respondents.map(async (respondent) => {
+                await sendNotification(respondent.email, 
+                    process.env.GMAIL_USER || '', 
+                    'Test Activation', 
+                    `You have been invited to take an online test. 
+                    Please use the below access code to start the test.
+                    ${respondent.accessCode}`)
+            })
+        }
+    }
+    return updatedTest
+}
+
+export async function sendNotification(to: string, 
+    from: string, 
+    subject: string, 
+    body: string) {
+    logger.info(`Sending email from: ${process.env.GMAIL_USER}, to: ${to}`);
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASSWORD // Use an app password for better security
+      }
+    });
+    // Set up email data
+    let mailOptions = {
+      from: process.env.GMAIL_USER, // Sender address
+      to: to, // List of recipients
+      subject: subject, // Subject line
+      //text: body, // Plain text body
+      html: body // HTML body
+    };
+  
+    // Send mail with defined transport object
+    transporter.sendMail(mailOptions, (error: any, info: any) => {
+      if (error) {
+          return logger.error(error);
+      }
+      logger.info('Message sent: ' + info);
+    });
+  };
 
 function decodeAccessCode(accessCode: string): { 
     testId: number, 

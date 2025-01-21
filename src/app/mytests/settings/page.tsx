@@ -82,30 +82,34 @@ export default function Settings() {
   ]
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    console.log('currentTestConfiguration', currentTestConfiguration)    
     try {
-      const validatedData = testSchema.parse(currentTestConfiguration);
+      const validatedData = testSchema.parse(currentTestConfiguration.test);
       
       const response = await fetch('/api/mytests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(validatedData),
+        body: JSON.stringify(currentTestConfiguration.test),
       });
 
       if (response.ok) {
-        const createdTest = await response.json();
+        const testResponse = await response.json();
         setCurrentTestConfiguration({
-          ...createdTest,
-          testId: createdTest.id
+          ...currentTestConfiguration,
+          test: {
+            ...currentTestConfiguration.test,
+            testId: testResponse.testId
+          } 
         });
-        toast.success('Test created successfully');
+        toast.success(testResponse.message);
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || 'Failed to create test');
       }
     } catch (error) {
+      console.log(error);
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       }
@@ -122,7 +126,7 @@ export default function Settings() {
           <label className="block text-sm font-medium text-gray-700">Test Name</label>
           <input
             type="text"
-            value={currentTestConfiguration?.test.name}
+            value={currentTestConfiguration?.test?.name}
             onChange={(e) => {
               handleFieldChange('name', e.target.value )
             }}
