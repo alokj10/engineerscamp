@@ -1,11 +1,19 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { TestQuestionMappingAtom, currentTestConfigurationAtom, TestDefinitionAtom } from '../store/myTestAtom'
 import { useAtom } from 'jotai'
+import { useRouter } from 'next/navigation'
+import { checkAuth } from '../uiUtils'
 
 export default function MyTestsPage() {
+  
+  // Add authentication check at the start of component
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
+
   const [showSearch, setShowSearch] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -13,7 +21,6 @@ export default function MyTestsPage() {
   const [showMenu, setShowMenu] = useState<number | null>(null)
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const [tests, setTests] = useState<TestDefinitionAtom[]>([])
-  const router = useRouter()
   console.log('currentTestConfiguration-root', currentTestConfiguration)
 
   const getStatusColor = (status: string) => {
@@ -82,7 +89,7 @@ export default function MyTestsPage() {
     <div className="container mx-auto px-4 py-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">My Tests (25)</h1>
+        <h1 className="text-2xl font-bold">My Tests ({tests?.length || 0})</h1>
         <Link href="/mytests/settings">
           <button
             onClick={handleCreateNewTest} 
@@ -135,7 +142,7 @@ export default function MyTestsPage() {
 
       {/* Test Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tests.map((test) => (
+        {tests && tests.length > 0 && tests.map((test) => (
           <div key={test.testId} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="px-4 py-3 border-b flex justify-between items-center">
               <div className={`font-medium ${getStatusColor(test.status || 'draft')}`}>

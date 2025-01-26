@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TestRespondentAtom } from '@/app/store/myTestAtom'
 import { z } from 'zod'
 import { toast } from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
+import { useRouter } from 'next/navigation';
+import { checkAuth } from '@/app/uiUtils'
 
 const emailSchema = z.string().email('Invalid email format')
 const respondentsSchema = z.array(z.object({
@@ -14,6 +16,10 @@ const respondentsSchema = z.array(z.object({
 export default function TestAccess() {
   const [email, setEmail] = useState('')
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
 
   const addRespondent = () => {
     try {

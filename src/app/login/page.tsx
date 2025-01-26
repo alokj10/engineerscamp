@@ -20,9 +20,9 @@ export default function Login() {
       password,
       redirect: false,
     });
-    alert(result?.error);
     if (result?.ok) {
       router.push('/dashboard');
+      router.refresh();
     }
   };
   return (

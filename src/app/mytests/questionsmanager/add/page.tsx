@@ -11,6 +11,7 @@ import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 import { useAtom } from 'jotai'
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { checkAuth } from '@/app/uiUtils'
 
 const StyleButton = ({ onToggle, active, label, style }) => {
   return (
@@ -127,7 +128,10 @@ const questionSchema = z.object({
 
 export default function AddQuestion() {
     const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
-    const router = useRouter();
+    const router = useRouter()
+    useEffect(() => {
+      checkAuth(router)
+    }, [router])
     const { control, watch, handleSubmit } = useForm<QuestionForm>({
       resolver: zodResolver(questionSchema),
       defaultValues: {

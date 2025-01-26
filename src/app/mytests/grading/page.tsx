@@ -3,9 +3,17 @@ import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
 import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 import { toast } from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import { checkAuth } from '@/app/uiUtils'
 
 export default function GradingPage() {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
+
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
+
 
   useEffect(() => {
     if (currentTestConfiguration?.test) {

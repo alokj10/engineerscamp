@@ -1,11 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { add } from 'date-fns'
 import { z } from 'zod'
 import { toast } from 'react-hot-toast'
 import { useAtom } from 'jotai'
 import { currentTestConfigurationAtom, TestQuestionMappingAtom } from '@/app/store/myTestAtom'
 import { InformationCircleIcon } from '../layout'
+import { useRouter } from 'next/navigation'
+import { checkAuth } from '@/app/uiUtils'
 
 const TimeSettingsSchema = z.object({
   durationOption: z.enum(['complete', 'perQuestion']),
@@ -46,6 +48,10 @@ const TimeSettingsSchema = z.object({
 export default function TimeSettings() {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const [durationOption, setDurationOption] = useState(currentTestConfiguration.test.testDurationMethod || 'complete')
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
 
   const parseDuration = (duration?: string) => {
     if (!duration) return { hours: 0, minutes: 0 }

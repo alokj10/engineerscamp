@@ -10,6 +10,9 @@ import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 import { TestQuestionMappingState } from '../../store/myTestAtom'
 import { EditableDropdown } from '@/app/components/editableDropdown'
 import { TestStatus } from '@/app/Constants'
+import { checkAuth } from '@/app/uiUtils'
+import { useRouter } from 'next/navigation';
+
 const testSchema = z.object({
   name: z.string().min(5, 'Test name must be at least 5 characters'),
   category: z.string().min(1, 'At least one category is required'),
@@ -20,7 +23,11 @@ const testSchema = z.object({
 export default function Settings() {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const [testCategories, setTestCategories] = useState<string[]>([])
-  
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
+
   const fetchCategories = async () => {
     try {
       const response = await fetch('/api/mytests/categories')

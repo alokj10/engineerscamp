@@ -1,11 +1,12 @@
 'use client'
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AcademicCapIcon } from "../page"
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { atom, useAtom } from 'jotai'
 import { currentTestConfigurationAtom, TestDefinitionAtom } from '@/app/store/myTestAtom'
 import { Toaster, toast } from "react-hot-toast"
+import { checkAuth } from "../uiUtils"
 
 
 export default function TestsLayout({
@@ -15,8 +16,12 @@ export default function TestsLayout({
 }) {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   // Modify the activation button click handler
-const [isPopupOpen, setIsPopupOpen] = useState(false);
-const [currentTestConfig] = useAtom(currentTestConfigurationAtom);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [currentTestConfig] = useAtom(currentTestConfigurationAtom);
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
 
 const handleActivateClick = async () => {
   setIsPopupOpen(true);

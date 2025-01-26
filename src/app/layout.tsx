@@ -1,9 +1,11 @@
+// 'use client'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Sidebar from "./components/Sidebar";
 import { getServerSession } from "next-auth";
+import { isAuthenticated } from "./uiUtils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,18 +17,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Engineers Camp",
-  description: "Technical and academic assessments",
-};
+// export const metadata: Metadata = {
+//   title: "Engineers Camp",
+//   description: "Technical and academic assessments",
+// };
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+
   const session = await getServerSession();
+  const isLoggedIn = await isAuthenticated()
   console.log('session',session);
+  console.log('isLoggedIn',isLoggedIn);
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

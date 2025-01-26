@@ -201,6 +201,27 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
   return testDefinition
 }
 
+export async function getRespondentDetailsByAccessCode(accessCode: string) {
+  const decodeObject = decodeAccessCode(accessCode.split("-")[accessCode.split("-").length-1])
+
+  return decodeObject;
+  const respondent = await getRespondentByAccessCode(accessCode)
+  const test = await getTestByAccessCode(accessCode)
+  const testDefinition = getTestDefinition(test, respondent)
+  return {
+    respondent: {
+      respondentId: respondent.id,
+      firstName: respondent.firstName || '',
+      lastName: respondent.lastName || '',
+      email: respondent.email || '',
+      testId: test.id,
+      accessCode: `${accessCode}, ${JSON.stringify(decodedString)}` || ''
+    },
+    testDefinition
+  }
+
+}
+
 function getQuestionAnswers(questionMappings: any[]): QuestionAnswerDefinitionAtom[] {
     const groupedByQuestion = questionMappings.reduce((acc, mapping) => {
       if (!acc[mapping.questionAnswerMapping.questionId]) {

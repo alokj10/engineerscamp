@@ -8,6 +8,7 @@ import { Editor, EditorState, convertFromRaw } from "draft-js";
 import { toast } from 'react-hot-toast';
 import { useAtom } from 'jotai'
 import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
+import { checkAuth } from '@/app/uiUtils'
 
 
 interface Question {
@@ -29,7 +30,10 @@ export default function QuestionsManager() {
   const [filteredQuestions, setFilteredQuestions] = useState<QuestionAnswerDefinitionAtom[]>([])
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
-  const router = useRouter();
+  const router = useRouter()
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
 
   const handleDeleteClick = (questionId: number) => {
     setShowDeleteConfirm(questionId);

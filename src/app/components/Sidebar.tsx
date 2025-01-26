@@ -1,16 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AcademicCapIcon } from '../page';
+import { checkAuth } from '../uiUtils';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    checkAuth(router)
+  }, [router])
 
   const menuItems = [
     { name: 'Dashboard', icon: AdjustmentsHorizontalIcon, href: '/dashboard' },
@@ -18,13 +23,19 @@ export default function Sidebar() {
     { name: 'Tests', icon: DocumentTextIcon, href: '/mytests' },
     { name: 'Respondents', icon: UserGroupIcon, href: '/respondents' },
     { name: 'Results', icon: ChartBarIcon, href: '/results' },
-    { name: 'My Account', icon: UserCircleIcon, href: '/myaccount' },
+    { name: 'My Account', icon: UserCircleIcon, href: '/myaccount' }
   ];
 
   const handleMenuClick = (href: string) => {
     if (href === '/mytests') {
       setIsCollapsed(true);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false, callbackUrl: '/' })
+    router.push("/")
+    router.refresh()
   };
 
   return (
@@ -86,7 +97,7 @@ export default function Sidebar() {
         <div className="space-y-4">
           {/* Sign Out Button */}
           <button
-            onClick={() => signOut()}
+            onClick={() => handleSignOut()}
             className="flex items-center w-full p-3 text-gray-700 hover:bg-[#69a83e] hover:text-white rounded-lg transition-colors"
           >
             <ArrowLeftOnRectangleIcon className="w-6 h-6" />
