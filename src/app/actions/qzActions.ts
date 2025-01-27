@@ -68,3 +68,14 @@ export async function getRespondentDetails(testId: number,
 
     return respondent;
 }
+
+export async function getDataForTestSession(testAccessId: number): Promise<TestAccessCodes> {
+    const testAccessRow = await prisma.testAccessCodes.findUnique({
+        where: {
+            id: testAccessId
+        },
+        include: {
+            respondent: true
+        }
+    });
+}
