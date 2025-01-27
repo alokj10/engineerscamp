@@ -57,6 +57,7 @@ export async function getRespondentDetails(testId: number,
     
     const testAccessRow = testAccessRows[0];
     const respondent: TestRespondentAtom = {
+        testAccessId: testAccessRow.id,
         testId: testId,
         respondentId: respondentId,
         firstName: testAccessRow.respondent.firstName || '',

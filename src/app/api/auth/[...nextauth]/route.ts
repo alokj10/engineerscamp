@@ -192,7 +192,7 @@ async function authorizeRespondent(credentials: any) {
   }
 
   return {
-    id: testRespondentInfo.respondentId.toString(),
+    id: testRespondentInfo.testAccessId?.toString(),
     email: testRespondentInfo.email,
     name: testRespondentInfo.firstName + ' ' + testRespondentInfo.lastName,
     userType: 'respondent'

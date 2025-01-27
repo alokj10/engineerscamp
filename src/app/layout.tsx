@@ -35,6 +35,10 @@ export default async function RootLayout({
   console.log('isLoggedIn',isLoggedIn);
   return (
     <html lang="en">
+      <head>
+        <title>Engineers Camp</title>
+        <meta name="description" content="Technical and academic assessments" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Toaster position="top-center" reverseOrder={false} />
           <Providers>

@@ -51,11 +51,56 @@ export default async function Home() {
           </button>
         </div>
       </header>
+{/* Quick Quiz Access Section */}
+<section className="py-16 bg-gradient-to-b from-white to-gray-50">
+  <div className="container mx-auto px-6">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+      <div className="w-full md:w-1/2 space-y-6">
+        <h2 className="text-4xl font-bold leading-tight" style={{ color: '#69a83e' }}>
+          Got an Access Code? <br/>
+          Start Your Test Instantly!
+        </h2>
+        <p className="text-xl text-gray-700">
+          No sign-up required! Enter your access code and begin your assessment right away. It's that simple.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Link href="/qz" className="inline-block">
+            <button 
+              className="w-full sm:w-auto px-8 py-4 text-lg font-semibold text-white rounded-lg shadow-lg transition-transform hover:scale-105"
+              style={{ backgroundColor: '#69a83e' }}
+            >
+              Enter Access Code
+            </button>
+          </Link>
+        </div>
+      </div>
+      
+      <div className="w-full md:w-1/2">
+        <div className="bg-white p-8 rounded-xl shadow-xl">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600">1</div>
+              <p className="text-lg">Receive your unique access code</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600">2</div>
+              <p className="text-lg">Visit our quick access portal</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600">3</div>
+              <p className="text-lg">Start your test immediately!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20" style={{ backgroundColor: '#97e0b9' }}>
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center mb-16" style={{ color: '#69a83e' }}>Platform Features</h2>
+          <h2 className="text-3xl font-bold text-center mb-16" style={{ color: '#316047' }}>Platform Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="text-center p-6 bg-white rounded-lg shadow-lg">
               <h3 className="text-xl font-semibold mb-4" style={{ color: '#69a83e' }}>Employee Assessment</h3>
@@ -104,7 +149,8 @@ export default async function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="text-white py-20" style={{ backgroundColor: '#69a83e' }}>
+      <section className="py-20" style={{ backgroundColor: '#97e0b9', color: '#316047' }}>
+      {/* <section className="text-white py-20" style={{ backgroundColor: '#69a83e' }}> */}
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-8">Ready to Get Started?</h2>
           <p className="text-xl mb-8">Join thousands of organizations already using our platform</p>
@@ -148,3 +194,4 @@ export function AcademicCapIcon(){
         </svg>
 
 }
+

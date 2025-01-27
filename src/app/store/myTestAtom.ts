@@ -34,6 +34,7 @@ export interface TestDefinitionAtom {
 }
 
 export interface TestRespondentAtom {
+  testAccessId?: number,
   respondentId: number,
   firstName: string,
   lastName: string,
