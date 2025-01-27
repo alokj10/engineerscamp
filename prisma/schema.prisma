@@ -117,6 +117,7 @@ model TestAccessCodes {
   testId       Int
   respondent   Respondent @relation(fields: [respondentId], references: [id])
   respondentId Int
+  timestamp    String     @db.VarChar(60) @default("0")
   code         String     @db.VarChar(255)
   @@unique(name: "testId_respondentId", [testId, respondentId])
   updatedOn    DateTime   @default(now())

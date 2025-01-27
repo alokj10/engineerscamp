@@ -205,21 +205,6 @@ export async function getRespondentDetailsByAccessCode(accessCode: string) {
   const decodeObject = decodeAccessCode(accessCode.split("-")[accessCode.split("-").length-1])
 
   return decodeObject;
-  const respondent = await getRespondentByAccessCode(accessCode)
-  const test = await getTestByAccessCode(accessCode)
-  const testDefinition = getTestDefinition(test, respondent)
-  return {
-    respondent: {
-      respondentId: respondent.id,
-      firstName: respondent.firstName || '',
-      lastName: respondent.lastName || '',
-      email: respondent.email || '',
-      testId: test.id,
-      accessCode: `${accessCode}, ${JSON.stringify(decodedString)}` || ''
-    },
-    testDefinition
-  }
-
 }
 
 function getQuestionAnswers(questionMappings: any[]): QuestionAnswerDefinitionAtom[] {
@@ -334,10 +319,9 @@ export async function getCategories() {
 
     return categories
 }
-import crypto from 'crypto'
 import { logger } from "../utils/logger"
-import { convertDateTimeToString, convertToDateTime, getCurrentDateTime, getIsoDateTimeString } from "../utils/dateTimeUtils"
-import { AnswerOptionDefinition, QuestionAnswerDefinitionAtom, QuestionDefinition } from "../store/questionAnswerDefinitionAtom"
+import { convertDateTimeToString, convertToDateTime, getIsoDateTimeString } from "../utils/dateTimeUtils"
+import { QuestionAnswerDefinitionAtom } from "../store/questionAnswerDefinitionAtom"
 
 export async function saveRespondents(testId: number, respondents: TestRespondentAtom[]) {
     const session = await getServerSession()
@@ -386,12 +370,14 @@ export async function saveRespondents(testId: number, respondents: TestResponden
                 }
             },
             update: {
-                code: accessCode
+                code: accessCode,
+                timestamp: timestamp
             },
             create: {
                 testId: testId,
                 respondentId: dbRespondent.id,
-                code: accessCode
+                code: accessCode,
+                timestamp: timestamp
             }
         })
 
@@ -587,6 +573,7 @@ function decodeAccessCode(accessCode: string): {
     {
         let bufferObj = Buffer.from(accessCode, "base64")
         let codeString = bufferObj.toString('utf8')
+        logger.info(`Decoding: ${codeString}`)
         const [testId, respondentId, timestamp] = codeString.split('-')
         // const decodeObj = jwt.verify(accessCode, 'engineerscamp') as {
         //     testId: string | '-1',

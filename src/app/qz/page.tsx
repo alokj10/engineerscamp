@@ -1,7 +1,9 @@
 'use client'
 
+import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { useRouter } from 'next/navigation';
 
 export default function QuizPage() {
   const [step, setStep] = useState(1)
@@ -9,6 +11,7 @@ export default function QuizPage() {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
+  const router = useRouter();
 
   const isEmailValid = (email: string) => {
     return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
@@ -16,25 +19,40 @@ export default function QuizPage() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('/api/qz', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          accessCode,
-          firstName,
-          lastName,
-          email,
-        }),
-      })
+      // const response = await fetch('/api/qz', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     accessCode,
+      //     firstName,
+      //     lastName,
+      //     email,
+      //   }),
+      // })
 
-      if (response.ok) {
-        toast.success('Successfully registered for the quiz!')
+      const result = await signIn('credentials', {
+        credentialType: 'respondent',
+        email,
+        firstName,
+        lastName,
+        accessCode,
+        redirect: false,
+      }, {
+        callbackUrl: '/qz',
+      });
+      console.log('respondent signIn result', result);
+      if (result?.ok) {
+        router.push('/dashboard');
+        router.refresh();
       } else {
-        toast.error('Failed to register. Please try again.')
+        // alert('Invalid respondent credentials ' + result?.error );
+        // console.log('respondent signIn notok', result);
+        toast.error(`${result?.error}`)
       }
     } catch (error) {
+      console.log('respondent signIn error', error);
       toast.error('Something went wrong. Please try again.')
     }
   }

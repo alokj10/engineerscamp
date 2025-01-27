@@ -1,21 +1,25 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from "next/link";
 import { AcademicCapIcon } from '../page';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = await signIn('credentials', {
+      credentialType: 'admin',
       email,
       password,
       redirect: false,
@@ -24,7 +28,29 @@ export default function Login() {
       router.push('/dashboard');
       router.refresh();
     }
+    else {
+      toast.error(`${result?.error}`)
+    }
   };
+
+  useEffect(() => {
+    const callbackUrl = searchParams.get('callbackUrl');
+    if(callbackUrl && callbackUrl?.indexOf('/qz') !== -1) {
+      router.push('/qz');
+      router.refresh();
+    }
+    else {
+      setIsLoading(false);
+    }
+  }, [router])
+
+  
+  if(isLoading) {
+    return (
+      <div>Loading...</div>
+    ) 
+  } 
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#f3f4f2' }}>
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">

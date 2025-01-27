@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import Sidebar from "./components/Sidebar";
 import { getServerSession } from "next-auth";
 import { isAuthenticated } from "./uiUtils";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Toaster position="top-center" reverseOrder={false} />
           <Providers>
             {session ? (
               <div className="flex">
