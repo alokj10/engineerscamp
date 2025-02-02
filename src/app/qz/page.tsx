@@ -44,7 +44,7 @@ export default function QuizPage() {
       });
       console.log('respondent signIn result', result);
       if (result?.ok) {
-        router.push('/dashboard');
+        router.push('/qz/console');
         router.refresh();
       } else {
         // alert('Invalid respondent credentials ' + result?.error );

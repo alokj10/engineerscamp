@@ -1,4 +1,21 @@
-export interface TestSessionAtom {
+export interface QzQuestionAtom {
+    questionId: number,
+    question: string,
+    type: string
+}
+
+export interface QzAnswerOptionAtom {
+    answerOptionId: number,
+    answer: string,
+    isSelected: boolean
+}
+
+export interface QzQuestionAnswerAtom {
+    question: QzQuestionAtom,
+    answerOptions: QzAnswerOptionAtom[]
+}
+
+export interface QzSessionAtom {
     testId: number,
     name: string,
     language: string,
@@ -6,10 +23,5 @@ export interface TestSessionAtom {
     testDurationMethod: string | undefined,
     testDurationForTest: string | undefined,
     testDurationForQuestion: string | undefined,
-    testActivationMethod: string | undefined,
-    manualActivationPeriod: string | undefined,
-    scheduledActivationStartsOn: string | undefined,
-    scheduledActivationEndsOn: string | undefined,
-    createdBy: string | undefined,
-    createdOn: string | undefined
+    questionAnswers: QzQuestionAnswerAtom[]
 }

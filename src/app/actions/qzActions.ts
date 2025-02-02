@@ -5,6 +5,7 @@ import prisma from "../lib/prisma";
 import { TestRespondentAtom } from "../store/myTestAtom";
 import { getRespondentDetailsByAccessCode } from "./testActions";
 import { logger } from "../utils/logger";
+import { QzQuestionAnswerAtom, QzSessionAtom } from "../store/qzAtom";
 
 export async function getRespondentInfoForSession(testRespondentAtom: TestRespondentAtom): Promise<TestRespondentAtom> {
     const decodeResult = await getRespondentDetailsByAccessCode(testRespondentAtom.accessCode);
@@ -69,13 +70,57 @@ export async function getRespondentDetails(testId: number,
     return respondent;
 }
 
-export async function getDataForTestSession(testAccessId: number): Promise<TestAccessCodes> {
+export async function getDataForQzSession(testAccessId: number): Promise<QzSessionAtom> {
     const testAccessRow = await prisma.testAccessCodes.findUnique({
         where: {
             id: testAccessId
         },
         include: {
-            respondent: true
+            test: {
+                include: {
+                    testQuestionMappings: {
+                        include: {
+                            questionAnswerMapping: {
+                                include: {
+                                    question: true,
+                                    answerOption: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
+
+    if (!testAccessRow || !testAccessRow.test) {
+        throw new Error('Test session not found');
+    }
+
+    const questionAnswers: QzQuestionAnswerAtom[] = testAccessRow.test.testQuestionMappings.map(mapping => {
+        const qa = mapping.questionAnswerMapping;
+        return {
+            question: {
+                questionId: qa.question.id,
+                question: qa.question.question,
+                type: qa.question.type
+            },
+            answerOptions: [{
+                answerOptionId: qa.answerOption.id,
+                answer: qa.answerOption.answer,
+                isSelected: false
+            }]
+        };
+    });
+
+    return {
+        testId: testAccessRow.testId,
+        name: testAccessRow.test.name,
+        language: 'English',
+        questionSortOrder: testAccessRow.test.questionSortOrder,
+        testDurationMethod: testAccessRow.test.testDurationMethod || 'complete',
+        testDurationForTest: testAccessRow.test.testDurationForTest || '00:30',
+        testDurationForQuestion: testAccessRow.test.testDurationForQuestion || '00:02',
+        questionAnswers: questionAnswers
+    };
 }
