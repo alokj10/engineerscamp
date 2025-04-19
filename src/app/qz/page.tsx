@@ -40,7 +40,7 @@ export default function QuizPage() {
         accessCode,
         redirect: false,
       }, {
-        callbackUrl: '/qz',
+        // callbackUrl: '/qz',
       });
       console.log('respondent signIn result', result);
       if (result?.ok) {

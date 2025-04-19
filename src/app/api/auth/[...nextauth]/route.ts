@@ -9,14 +9,14 @@ import { getRespondentInfoForSession } from '@/app/actions/qzActions';
 const prisma = new PrismaClient();
 
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      userType: string;
-    } & DefaultSession["user"];
-  }
-}
+// declare module "next-auth" {
+//   interface Session {
+//     user: {
+//       id: string;
+//       userType: string;
+//     } & DefaultSession["user"];
+//   }
+// }
 
 const handler: NextAuthOptions = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -63,9 +63,9 @@ const handler: NextAuthOptions = NextAuth({
     error: '/error',
   },
   callbacks: {
-    async jwt({ token, user, profile, account, trigger, session }) {
-      logger.info(`JWT Auth Token: ${JSON.stringify(token)}`);
-      logger.info(`JWT Auth User: ${JSON.stringify(user)}`);
+    jwt({ token, user, profile, account, trigger, session }) {
+      // logger.info(`JWT Auth Token: ${JSON.stringify(token)}`);
+      // logger.info(`JWT Auth User: ${JSON.stringify(user)}`);
       // if (user) {
       //   logger.info(`JWT User available: ${JSON.stringify(user)}`);
       //   token.id = user.id;
@@ -74,17 +74,40 @@ const handler: NextAuthOptions = NextAuth({
       // }
       token.id = user?.id;
       token.userType = user?.userType || '';
+      logger.info(`JWT Auth token: ${JSON.stringify(token)}`);
       return token;
+      // const r = {
+      //   ...token,
+      //   userType: user?.userType,
+      //   user: {
+      //     ...user,
+      //     id: user?.id,
+      //     userType: user?.userType
+      //   }
+      // }
+      // logger.info(`JWT Auth: ${JSON.stringify(r)}`);
+      // return r;
     },
-    async session({ session, user, token }) {
+    session({ session, user, token }) {
       if (token) {
-        logger.info(`Session user available : ${JSON.stringify(token)}`);
+        // logger.info(`Session user available : ${JSON.stringify(token)}`);
         
         session.user.id = token?.sub || '';
         session.user.userType = token?.userType || '';
       }
-      logger.info(`Session Auth : ${JSON.stringify(session)}`);
-      return session;
+      // logger.info(`Session Auth : ${JSON.stringify(session)}`);
+      // return session;
+      const r = {
+        ...session,
+        userType: token.userType,
+        user: {
+          ...session.user,
+          id: token.sub,
+          userType: token.userType
+        }
+      }
+      logger.info(`Session Auth : ${JSON.stringify(r)}`);
+      return r;
     },
     signIn: async ({ user, account, profile, email, credentials }) => {
       if (account?.provider === 'credentials') {
@@ -173,6 +196,17 @@ async function authorizeRespondent(credentials: any): Promise<{
   };
 }
 
+declare module "next-auth" {
+  interface Session {
+    userType: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    userType: string
+  }
+}
 // const handler = NextAuth(authOptions);
 // export default handler;
 export const authOptions = handler;

@@ -231,12 +231,12 @@ function getQuestionAnswers(questionMappings: any[]): QuestionAnswerDefinitionAt
                 createdOn: mapping.questionAnswerMapping.answerOption.createdOn,
                 isCorrect: mapping.questionAnswerMapping.isCorrect
             })
-      console.log('acc', acc)
+    //   console.log('acc', acc)
       return acc
     }, {} as Record<string, QuestionAnswerDefinitionAtom>)
 
     const result = Object.values(groupedByQuestion) as QuestionAnswerDefinitionAtom[]
-    console.log('result', result)
+    // console.log('result', result)
     return result
 }
 

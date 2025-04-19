@@ -4,6 +4,29 @@
 import { useEffect, useState } from 'react';
 import { QzSessionAtom } from '@/app/store/qzAtom';
 import toast from 'react-hot-toast';
+import { convertFromRaw, EditorState } from 'draft-js';
+import { stateToHTML } from 'draft-js-export-html';
+
+
+// Component to render Draft.js content
+const RichTextRenderer = ({ contentRaw }: { contentRaw: string }) => {
+  try {
+    if (!contentRaw) return <span>No content available</span>;
+    
+    // Parse the raw content
+    const contentState = convertFromRaw(JSON.parse(contentRaw));
+    const editorState = EditorState.createWithContent(contentState);
+    
+    // Convert to HTML
+    const html = stateToHTML(editorState.getCurrentContent());
+    
+    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  } catch (error) {
+    console.error('Error rendering rich text:', error);
+    // Fallback to displaying raw text if parsing fails
+    return <span>{contentRaw}</span>;
+  }
+};
 
 export default function QuizConsole() {
   const [session, setSession] = useState<QzSessionAtom | null>(null);
@@ -140,7 +163,9 @@ export default function QuizConsole() {
             <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-4">
               Question {currentQuestionIndex + 1}
             </h2>
-            <p className="text-gray-700 text-base md:text-lg mb-3">{currentQuestion.question.question}</p>
+            <div className="text-gray-700 text-base md:text-lg mb-3">
+              <RichTextRenderer contentRaw={currentQuestion.question.question} />
+            </div>
             <p className="text-sm text-gray-500 italic">
               {currentQuestion.question.type === 'Single Choice' 
                 ? 'Select one correct answer'
@@ -152,16 +177,18 @@ export default function QuizConsole() {
             {currentQuestion.answerOptions.map(answerOption => (
               <label 
                 key={answerOption.answerOptionId} 
-                className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 <input
                   type={currentQuestion.question.type === 'Single Choice' ? 'radio' : 'checkbox'}
                   checked={selectedAnswers[currentQuestionIndex]?.includes(answerOption.answerOptionId)}
                   onChange={() => handleAnswerSelection(answerOption.answerOptionId)}
                   name={`question-${currentQuestionIndex}`}
-                  className="mr-3 h-4 w-4 text-blue-600"
+                  className="mr-3 h-4 w-4 text-blue-600 mt-1"
                 />
-                <span className="text-gray-700">{answerOption.answer}</span>
+                <div className="text-gray-700">
+                  <RichTextRenderer contentRaw={answerOption.answer} />
+                </div>
               </label>
             ))}
           </div>
