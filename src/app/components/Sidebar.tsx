@@ -18,8 +18,8 @@ export default function Sidebar() {
   }, [router])
 
   const menuItems = [
-    { name: 'Dashboard', icon: AdjustmentsHorizontalIcon, href: '/dashboard' },
-    { name: 'Questions', icon: ClipboardDocumentListIcon, href: '/questions' },
+    // { name: 'Dashboard', icon: AdjustmentsHorizontalIcon, href: '/dashboard' },
+    // { name: 'Questions', icon: ClipboardDocumentListIcon, href: '/questions' },
     { name: 'Tests', icon: DocumentTextIcon, href: '/mytests' },
     { name: 'Respondents', icon: UserGroupIcon, href: '/respondents' },
     { name: 'Results', icon: ChartBarIcon, href: '/results' },

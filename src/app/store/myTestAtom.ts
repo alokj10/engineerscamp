@@ -50,6 +50,23 @@ export interface TestQuestionMappingAtom {
     testRespondents: TestRespondentAtom[]
 }
 
+export interface TestResponseDetailsAtom {
+  testId: number,
+  respondentId: number,
+  questionId: number,
+  answerOptionId: number,
+  answeredOn: string,
+}
+
+export interface TestResponseAtom {
+  respondent: TestRespondentAtom,
+  status: string,
+  startedOn: string,
+  submittedOn: string,
+  score: number,
+  testResponseDetails: TestResponseDetailsAtom[]
+}
+
 export const TestQuestionMappingState = atom<TestQuestionMappingAtom | null>(null)
 
 

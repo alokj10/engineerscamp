@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { AcademicCapIcon } from "../page"
 import { usePathname, useRouter } from 'next/navigation'
 import { atom, useAtom } from 'jotai'
-import { currentTestConfigurationAtom, TestDefinitionAtom } from '@/app/store/myTestAtom'
+import { currentTestConfigurationAtom, TestDefinitionAtom, TestQuestionMappingAtom } from '@/app/store/myTestAtom'
 import { Toaster, toast } from "react-hot-toast"
 import { checkAuth } from "../uiUtils"
 
@@ -54,10 +54,12 @@ const handleConfirmActivation = async () => {
     ) {
       return href !== '/mytests/settings'
     }
-    return false
+    return currentTestConfiguration.test.status === 'ACTIVE'
   }
-  const isProgressItemDisabled = (currentTestConfiguration: TestDefinitionAtom | null) => {
-    return !currentTestConfiguration || currentTestConfiguration.status !== 'Active'
+
+  const isProgressItemDisabled = (currentTestConfiguration: TestQuestionMappingAtom | null) => {
+    console.log('isProgressItemDisabled', currentTestConfiguration)
+    return !currentTestConfiguration || currentTestConfiguration.test.status !== 'ACTIVE'
   }
 
   
@@ -72,7 +74,7 @@ const handleConfirmActivation = async () => {
   ]
 
   const testProgressItems = [
-    { icon: ComputerDesktopIcon, label: "Respondent Monitoring", href: "/mytests/monitoring" },
+    // { icon: ComputerDesktopIcon, label: "Respondent Monitoring", href: "/mytests/monitoring" },
     { icon: ClipboardDocumentListIcon, label: "Results", href: "/mytests/results" },
     { icon: CheckBadgeIcon, label: "Answers Review", href: "/mytests/review" },
     { icon: ChartBarIcon, label: "Statistics", href: "/mytests/statistics" },
