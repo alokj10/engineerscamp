@@ -7,6 +7,7 @@ import Sidebar from "./components/Sidebar";
 import { getServerSession } from "next-auth";
 import { isAuthenticated } from "./uiUtils";
 import { Toaster } from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +32,27 @@ export default async function RootLayout({
 
   const session = await getServerSession();
   const isLoggedIn = await isAuthenticated()
-  console.log('session',session);
+  console.log('layout session',session);
   console.log('isLoggedIn',isLoggedIn);
+
+  const renderMainSection = async () => {
+    // const { data: session, status } = useSession();
+    const session = await getServerSession();
+    console.log('session',session);
+    return (
+      <>
+        {session ? (
+          <div className="flex">
+            <Sidebar />
+            <main className="flex-1">{children}</main>
+          </div>
+        ) : (
+          <main>{children}</main>
+        )}
+      </>
+    ) 
+  }
+
   return (
     <html lang="en">
       <head>
@@ -50,6 +70,7 @@ export default async function RootLayout({
             ) : (
               <main>{children}</main>
             )}
+            {/* {await renderMainSection()} */}
           </Providers>
       </body>
     </html>

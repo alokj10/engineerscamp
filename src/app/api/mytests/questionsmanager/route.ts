@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createQuestionAnswer, getQuestionsByCategory } from '@/app/actions/questionActions'
+import { createQuestionAnswer, getQuestionsByCategory, getQuestionsByTestId } from '@/app/actions/questionActions'
 import { getServerSession } from 'next-auth'
 import { PrismaClient } from "@prisma/client"
 import { TestQuestionMappingAtom } from '@/app/store/myTestAtom'
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams
         const category = searchParams.get('category') || undefined
+        const testId = searchParams.get('testId') || undefined
         const currentUser = await prisma.user.findUnique({
             where: { email: session.user.email || '' }
         })
@@ -58,7 +59,8 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        const questions = await getQuestionsByCategory(currentUser.id, category)
+        // const questions = await getQuestionsByCategory(currentUser.id, category)
+        const questions = await getQuestionsByTestId(Number(testId))
         
         return NextResponse.json({ 
             data: questions 

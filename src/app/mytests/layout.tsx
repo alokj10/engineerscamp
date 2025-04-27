@@ -23,28 +23,38 @@ export default function TestsLayout({
     checkAuth(router)
   }, [router])
 
-const handleActivateClick = async () => {
-  setIsPopupOpen(true);
-};
+  useEffect(() => {
+    if (currentTestConfig.test.testId > 0) {
+      setCurrentTestConfiguration(currentTestConfig);
+    }
+    else {
+      router.push('/mytests');
+    }
+  }, [currentTestConfig, setCurrentTestConfiguration]);
 
-const handleConfirmActivation = async () => {
-  try {
-    const response = await fetch(`/api/mytests/${currentTestConfig.test.testId}/activation`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(currentTestConfig),
-    });
+  const handleActivateClick = async () => {
+    setIsPopupOpen(true);
+  };
 
-    if (!response.ok) throw new Error('Activation failed');
+  const handleConfirmActivation = async () => {
+    try {
+      const response = await fetch(`/api/mytests/${currentTestConfig.test.testId}/activation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(currentTestConfig),
+      });
 
-    toast.success('Test activated successfully');
-    setIsPopupOpen(false);
-  } catch (error) {
-    toast.error('Failed to activate test');
-  }
-};
+      if (!response.ok) throw new Error('Activation failed');
+
+      toast.success('Test activated successfully');
+      setIsPopupOpen(false);
+    } catch (error) {
+      toast.error('Failed to activate test');
+    }
+  };
+
   const pathname = usePathname()
   
   const showSidebar = pathname !== '/mytests'
@@ -58,11 +68,9 @@ const handleConfirmActivation = async () => {
   }
 
   const isProgressItemDisabled = (currentTestConfiguration: TestQuestionMappingAtom | null) => {
-    console.log('isProgressItemDisabled', currentTestConfiguration)
+    // console.log('isProgressItemDisabled', currentTestConfiguration)
     return !currentTestConfiguration || currentTestConfiguration.test.status !== 'ACTIVE'
   }
-
-  
 
   const testConfigItems = [
     { icon: Cog6ToothIcon, label: "General Settings", href: "/mytests/settings" },
@@ -79,6 +87,7 @@ const handleConfirmActivation = async () => {
     { icon: CheckBadgeIcon, label: "Answers Review", href: "/mytests/review" },
     { icon: ChartBarIcon, label: "Statistics", href: "/mytests/statistics" },
   ]
+
   const getCurrentPageTitle = () => {
     const currentItem = [...testConfigItems, ...testProgressItems].find(item => item.href === pathname)
     return currentItem?.label || 'My Tests'

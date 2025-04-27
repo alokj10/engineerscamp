@@ -20,57 +20,13 @@ export async function createQuestionAnswer(testQuestionMappingAtom: TestQuestion
         throw new Error('Unauthorized: Only admin users can create questions')
     }
 
+    logger.info(`User ${currentUser.email} performing create question operation`)
+
     const currentTimestamp = new Date().toISOString()
     const { id, questionAnswerDefinitions, test } = testQuestionMappingAtom;
     updateTestQuestionMapping(testQuestionMappingAtom)
     return getTestDefinitionById(test.testId)
 
-    /*
-    const question = await prisma.questions.create({
-        data: {
-            question: questionAnswerDef.question.question,
-            category: questionAnswerDef.question.category,
-            type: questionAnswerDef.question.type,
-            createUserId: currentUser.id,
-            createdOn: currentTimestamp
-        }
-    })
-
-    const answerOptions = await Promise.all(
-        questionAnswerDef.answerOptions.map(async (option) => {
-            const answerOption = await prisma.answerOptions.create({
-                data: {
-                    answer: option.answer,
-                    category: question.category,
-                    createUserId: currentUser.id,
-                    createdOn: currentTimestamp
-                }
-            })
-
-            const qaMapping = await prisma.questionAnswerMappings.create({
-                data: {
-                    questionId: question.id,
-                    answerOptionId: answerOption.id,
-                    isCorrect: option.isCorrect
-                }
-            })
-
-            const testQuestionMapping = await prisma.testQuestionMappings.create({
-              data: {
-                testId: 1,
-                questionAnswerMappingId: qaMapping.id
-              }
-            })
-
-            return testQuestionMapping
-        })
-    )
-        */
-
-    // return {
-    //     question,
-    //     answerOptions
-    // }
 }
 
 export async function getQuestionsByCategory(userId: number, category?: string) {
@@ -316,11 +272,15 @@ export async function getQuestionsByTestId(testId: number): Promise<QuestionAnsw
     }
   })
 
-  const questionAnswerDefs: QuestionAnswerDefinitionAtom[] = []; 
-  testQuestionMappings.map(async tqm => {
-    let questionCreatedBy = await getUserDetails(tqm.questionAnswerMapping.question.createUserId);
-    let answerCreatedBy = await getUserDetails(tqm.questionAnswerMapping.answerOption.createUserId);
-    questionAnswerDefs.push({
+  const populateQaList = async (questionAnswerDefs: QuestionAnswerDefinitionAtom[],
+    tqm: any, questionCreatedBy: any, answerCreatedBy: any
+  ) => {
+    let qa = await populateQA(tqm, questionCreatedBy, answerCreatedBy)
+    questionAnswerDefs.push(qa)
+  }
+
+  const populateQA = async (tqm: any, questionCreatedBy: any, answerCreatedBy: any) => {
+    return {
       question: {
         questionId: tqm.questionAnswerMapping.question.id,
         question: tqm.questionAnswerMapping.question.question,
@@ -337,8 +297,55 @@ export async function getQuestionsByTestId(testId: number): Promise<QuestionAnsw
         createdBy: answerCreatedBy?.name || '',
         createdOn: convertDateTimeToString(tqm.questionAnswerMapping.answerOption.createdOn) || ''
       }]
-    })
-  })
+    }
+  }
 
-  return questionAnswerDefs
+  const populateFinalQa = async () => {
+    let questionAnswerDefs1: QuestionAnswerDefinitionAtom[] = []
+    for (let i = 0; i < testQuestionMappings.length; i++) {
+      let questionCreatedBy = await getUserDetails(testQuestionMappings[i].questionAnswerMapping.question.createUserId);
+      let answerCreatedBy = await getUserDetails(testQuestionMappings[i].questionAnswerMapping.answerOption.createUserId);
+      await populateQaList(questionAnswerDefs1, testQuestionMappings[i], questionCreatedBy, answerCreatedBy)
+    }
+
+
+    // Group mappings by questionId
+    const questionMap = new Map<number, QuestionAnswerDefinitionAtom>();
+    
+    questionAnswerDefs1.forEach(mapping => {
+        const questionId = mapping.question.questionId;
+        
+        if (!questionMap.has(questionId)) {
+            // Create new question answer entry if it doesn't exist
+            questionMap.set(questionId, {
+                question: {
+                    questionId: questionId,
+                    question: mapping.question.question,
+                    type: mapping.question.type,
+                    category: mapping.question.category,
+                    createdBy: mapping.question.createdBy,
+                    createdOn: mapping.question.createdOn
+                },
+                answerOptions: []
+            });
+        }
+        
+        // Add the answer option to the existing question
+        questionMap.get(questionId)?.answerOptions.push({
+            answerOptionId: mapping.answerOptions[0].answerOptionId,
+            answer: mapping.answerOptions[0].answer,
+            category: mapping.answerOptions[0].category,
+            isCorrect: mapping.answerOptions[0].isCorrect,
+            createdBy: mapping.answerOptions[0].createdBy,
+            createdOn: mapping.answerOptions[0].createdOn
+        });
+    });
+    
+    // Convert map to array
+    const questionAnswers: QuestionAnswerDefinitionAtom[] = Array.from(questionMap.values());
+
+    return questionAnswers
+    // return questionAnswerDefs1
+  }
+  return await populateFinalQa();
 }

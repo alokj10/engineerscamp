@@ -17,6 +17,7 @@ export interface QzQuestionAnswerAtom {
 
 export interface QzSessionAtom {
     testId: number,
+    respondentId: number,
     name: string,
     language: string,
     questionSortOrder: string | undefined,
@@ -24,4 +25,17 @@ export interface QzSessionAtom {
     testDurationForTest: string | undefined,
     testDurationForQuestion: string | undefined,
     questionAnswers: QzQuestionAnswerAtom[]
+}
+
+export interface QzResponseQuestionAnswerAtom {
+    questionId: number,
+    answerOptionIds: number[],
+    answeredOn: string,
+}
+
+export interface QzResponseAtom {
+    testId: number,
+    respondentId: number,
+    status: string,
+    questionAnswers: QzResponseQuestionAnswerAtom[]
 }

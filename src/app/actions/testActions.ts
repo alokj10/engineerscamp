@@ -78,11 +78,6 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
                   respondent: true
               }
           }
-        //   respondents: {
-        //       include: {
-        //           testAccessCodes: true
-        //       }
-        //   }
       }
   })
     
@@ -92,37 +87,6 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
 
   const createdBy = await getUserDetails(test.createUserId);
     
-    // const answersGroupByQuestion = Object.groupBy(test.testQuestionMappings, (qm) => {
-    //     return qm.questionAnswerMapping.questionId
-    // })
-    // let questionAnswerDefinitions: QuestionAnswerDefinitionAtom[] = []
-    
-    // Object.keys(answersGroupByQuestion).forEach(async questionId => {
-    //     let answers = answersGroupByQuestion[Number(questionId)]
-    //     if (answers && answers.length > 0) {
-    //         let createdBy = await getUserDetails(answers[0].questionAnswerMapping.answerOption.createUserId)
-    //         questionAnswerDefinitions.push({
-    //             question: {
-    //                 questionId: Number(questionId),
-    //                 question: answers[0].questionAnswerMapping.question.question,
-    //                 category: answers[0].questionAnswerMapping.question.category,
-    //                 createdBy: createdBy?.name || '',
-    //                 type: answers[0].questionAnswerMapping.question.type,
-    //                 createdOn: convertDateTimeToString(answers[0].questionAnswerMapping.question.createdOn) || ''
-    //             },
-    //             answerOptions: answers.map(a => {
-    //                 return {
-    //                     answerOptionId: a.questionAnswerMapping.answerOption.id,
-    //                     answer: a.questionAnswerMapping.answerOption.answer,
-    //                     isCorrect: a.questionAnswerMapping.isCorrect,
-    //                     createdBy: createdBy?.name || '',
-    //                     category: a.questionAnswerMapping.answerOption.category,
-    //                     createdOn: convertDateTimeToString(a.questionAnswerMapping.answerOption.createdOn) || ''
-    //                 }
-    //             })
-    //         })
-    //     }
-    // })
   const testDefinition: TestQuestionMappingAtom = {
       id: test.id,
       test: {
@@ -153,35 +117,6 @@ export async function getTestDefinitionById(testId: number): Promise<TestQuestio
           createdBy: createdBy?.name || '',
           createdOn: test.createdOn.toISOString()
       },
-    //   questionAnswerDefinitions: test.testQuestionMappings.map(tqm => ({
-    //       question: {
-    //           questionId: tqm.questionAnswerMapping.question.id,
-    //           question: tqm.questionAnswerMapping.question.question,
-    //           category: tqm.questionAnswerMapping.question.category,
-    //           type: tqm.questionAnswerMapping.question.type,
-    //           createdBy: createdBy?.name || '',
-    //           createdOn: tqm.questionAnswerMapping.question.createdOn.toISOString()
-    //       },
-    //       answerOptions: test.testQuestionMappings.reduce((acc, mapping) => {
-    //           if (mapping.questionAnswerMapping.question.id === tqm.questionAnswerMapping.question.id) {
-    //               acc.push({
-    //                   answerOptionId: mapping.questionAnswerMapping.answerOption.id,
-    //                   answer: mapping.questionAnswerMapping.answerOption.answer,
-    //                   category: mapping.questionAnswerMapping.answerOption.category,
-    //                   createdBy: createdBy?.name || '',
-    //                   createdOn: mapping.questionAnswerMapping.answerOption.createdOn.toISOString(),
-    //                   isCorrect: mapping.questionAnswerMapping.isCorrect
-    //               })
-    //           }
-    //           return acc
-    //       }, [] as { 
-    //           answerOptionId: number; 
-    //           answer: string; 
-    //           category: string, 
-    //           createdBy: string,
-    //           createdOn: string,
-    //           isCorrect: boolean 
-    //       }[])
       questionAnswerDefinitions: getQuestionAnswers(test.testQuestionMappings),
       testRespondents: test.TestAccessCodes.map((tac) => {
 

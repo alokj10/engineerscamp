@@ -141,9 +141,9 @@ model TestResponse {
   respondent          Respondent            @relation(fields: [respondentId], references: [id])
   respondentId        Int
   startedOn           DateTime
-  submittedOn         DateTime
+  submittedOn         DateTime?
   status              String                @default("Pending") // Pending, InProgress, Paused, Submitted
-  score               Int
+  score               Int?
   updatedOn           DateTime              @default(now())
   TestResponseDetails TestResponseDetails[]
 }

@@ -1,11 +1,11 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
-import { QzSessionAtom } from '@/app/store/qzAtom';
+import { QzResponseAtom, QzSessionAtom } from '@/app/store/qzAtom';
 import toast from 'react-hot-toast';
 import { convertFromRaw, EditorState } from 'draft-js';
 import { stateToHTML } from 'draft-js-export-html';
+import { TestResponseStatus } from '@/app/Constants';
 
 
 // Component to render Draft.js content
@@ -33,7 +33,13 @@ export default function QuizConsole() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
-  const [selectedAnswers, setSelectedAnswers] = useState<{[key: number]: number[]}>({});
+  // const [selectedAnswers, setSelectedAnswers] = useState<{[key: number]: number[]}>({});
+  const [selectedAnswers, setSelectedAnswers] = useState<QzResponseAtom | null>({
+    testId: session?.testId || 0,
+    respondentId: 1,
+    status: TestResponseStatus.Pending,
+    questionAnswers: []
+  });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,26 +52,73 @@ export default function QuizConsole() {
   }, []);
 
   const handleAnswerSelection = (answerId: number) => {
-    const currentAnswers = selectedAnswers[currentQuestionIndex] || [];
+    const currentDateTime = new Date().toISOString();
     const question = session?.questionAnswers[currentQuestionIndex];
     
-    if (question?.type === 'Single Choice') {
+    if (!question) return;
+    
+    const questionId = question.question.questionId;
+    
+    if(!selectedAnswers) {
       setSelectedAnswers({
-        ...selectedAnswers,
-        [currentQuestionIndex]: [answerId]
-      });
-    } else {
-      const updatedAnswers = currentAnswers.includes(answerId)
-        ? currentAnswers.filter(id => id !== answerId)
-        : [...currentAnswers, answerId];
-      setSelectedAnswers({
-        ...selectedAnswers,
-        [currentQuestionIndex]: updatedAnswers
+        testId: session?.testId,
+        respondentId: session?.respondentId || 0,
+        status: TestResponseStatus.Pending,
+        questionAnswers: []
       });
     }
+
+    // Create a copy of the current state
+    const updatedResponse: QzResponseAtom = { 
+      ...selectedAnswers,
+      testId: session?.testId,
+      respondentId: session?.respondentId || 0,
+      status: TestResponseStatus.Pending,
+      questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
+    };
+    
+    // Find if we already have an answer for this question
+    const existingAnswerIndex = updatedResponse.questionAnswers.findIndex(
+      qa => qa.questionId === questionId
+    );
+    
+    if (existingAnswerIndex >= 0) {
+      // We already have an answer for this question
+      const existingAnswer = updatedResponse.questionAnswers[existingAnswerIndex];
+      
+      if (question.question.type === 'Single Choice') {
+        // For single choice, replace the answer
+        updatedResponse.questionAnswers[existingAnswerIndex] = {
+          ...existingAnswer,
+          // answerOptionId: answerId,
+          answerOptionIds: [answerId],
+          answeredOn: currentDateTime
+        };
+      } else {
+        // For multiple choice, toggle the answer
+        const updatedAnswerIds = existingAnswer.answerOptionIds.includes(answerId)
+          ? existingAnswer.answerOptionIds.filter(id => id !== answerId)
+          : [...existingAnswer.answerOptionIds, answerId];
+          
+        updatedResponse.questionAnswers[existingAnswerIndex] = {
+          ...existingAnswer,
+          answerOptionIds: updatedAnswerIds,
+          answeredOn: currentDateTime
+        };
+      }
+    } else {
+      // First answer for this question
+      updatedResponse.questionAnswers.push({
+        questionId: questionId,
+        answerOptionIds: [answerId],
+        answeredOn: currentDateTime
+      });
+    }
+    
+    setSelectedAnswers(updatedResponse);
   };
 
-  const handleNavigation = (direction: 'next' | 'prev') => {
+  const handleNavigation = async (direction: 'next' | 'prev') => {
     if (direction === 'next' && session?.testDurationMethod === 'perQuestion') {
       setQuestionStartTime(Date.now());
       setElapsedTime(0);
@@ -73,6 +126,18 @@ export default function QuizConsole() {
     setCurrentQuestionIndex(prev => 
       direction === 'next' ? prev + 1 : prev - 1
     );
+
+    if(direction === 'next') {
+      const updatedResponse: QzResponseAtom = { 
+        ...selectedAnswers,
+        testId: session?.testId || 0,
+        respondentId: session?.respondentId || 0,
+        status: TestResponseStatus.InProgress,
+        questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
+      };
+      setSelectedAnswers(updatedResponse);
+      await saveResponse();
+    }
   };
 
   const fetchQuizData = async () => {
@@ -84,7 +149,9 @@ export default function QuizConsole() {
           'Content-Type': 'application/json'
         }
       });
-      const data = await response.json();
+      const data = await response.json() as QzSessionAtom;
+      console.log('fetchquizdata');
+      console.log(data);
       setSession(data);
       setIsLoading(false);
     } catch (error) {
@@ -94,7 +161,7 @@ export default function QuizConsole() {
     }
   };
 
-  const handleSubmit = async () => {
+  const saveResponse = async () => {
     try {
       const response = await fetch('/api/qz/response', {
         method: 'POST',
@@ -102,19 +169,35 @@ export default function QuizConsole() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...session,
-          answers: selectedAnswers
+          QzSession: session,
+          QzResponse: selectedAnswers
         })
       });
       if (response.ok) {
-        setIsSubmitted(true);
+        alert(selectedAnswers?.status);
+        if(selectedAnswers?.status  === TestResponseStatus.Submitted) {
+          toast.success('Your answers have been submitted successfully.');
+          setIsSubmitted(true);
+        }
       }
     } catch (error) {
       console.error('Failed to submit quiz:', error);
     }
   };
 
-  console.log('quiz session', session);
+  const handleSubmit = async () => {
+    const updatedResponse: QzResponseAtom = { 
+      ...selectedAnswers,
+      testId: session?.testId || 0,
+      respondentId: 1,
+      status: TestResponseStatus.Submitted,
+      questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
+    };
+    setSelectedAnswers(updatedResponse);
+    await saveResponse();
+  };
+
+  // console.log('quiz session', session);
   if (session === null || !session) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   if (isSubmitted) return (
     <div className="flex items-center justify-center min-h-screen text-2xl font-semibold text-gray-800">

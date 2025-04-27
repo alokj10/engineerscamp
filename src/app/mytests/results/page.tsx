@@ -3,17 +3,20 @@
 import { useEffect, useState } from 'react'
 import { TestResponseAtom } from '@/app/store/myTestAtom'
 import { format } from 'date-fns'
+import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
+import { useAtom } from 'jotai'
 
 export default function TestResultsPage() {
   const [testResponses, setTestResponses] = useState<TestResponseAtom[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
 
   useEffect(() => {
     const fetchTestResults = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/mytests/results')
+        const response = await fetch('/api/results?testId=' + currentTestConfiguration.test.testId)
         
         if (!response.ok) {
           throw new Error('Failed to fetch test results')
@@ -104,7 +107,9 @@ export default function TestResultsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {testResponses.map((response, index) => {
+              {testResponses &&
+              testResponses.length > 0 &&
+              testResponses.map((response, index) => {
                 const isPassed = calculatePassStatus(response)
                 return (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>

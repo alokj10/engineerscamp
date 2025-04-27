@@ -14,3 +14,10 @@ export enum TestCategories {
     Database = 'DATABASE',
     Networking = 'NETWORKING',
 }
+
+export enum TestResponseStatus {
+    Pending = 'PENDING',
+    InProgress = 'IN_PROGRESS',
+    Submitted = 'SUBMITTED',
+    Paused = 'PAUSED',
+}

@@ -61,6 +61,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
         }
 
         const testData = await getDataForQzSession(Number(token?.sub))
+        // logger.info(`quiz api: testData: ${JSON.stringify(testData)}`)
         return NextResponse.json(testData)
 
     } catch (error) {

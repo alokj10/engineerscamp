@@ -38,6 +38,11 @@ export default function Sidebar() {
     router.refresh()
   };
 
+  console.log('session.userType:', session?.userType)
+  if(session?.userType === 'Respondent') {
+    return null
+  }
+
   return (
     <div className={`relative bg-white shadow-lg transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
       <div className="h-screen flex flex-col justify-between p-4">
@@ -114,6 +119,7 @@ export default function Sidebar() {
             ) : (
               <ChevronLeftIcon className="w-5 h-5" />
             )}
+            {!isCollapsed && <span className="ml-3">Hide</span>}
           </button>
         </div>
       </div>

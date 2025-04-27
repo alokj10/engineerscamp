@@ -62,8 +62,14 @@ export default function QuestionsManager() {
   };
   
   const fetchQuestions = async () => {
+    // setFilteredQuestions(currentTestConfiguration.questionAnswerDefinitions);
+    // return;
     const params = new URLSearchParams()
     
+    if(currentTestConfiguration && currentTestConfiguration.test.testId) {
+      params.append('testId', currentTestConfiguration.test.testId.toString())
+    }
+
     if (selectedCategory !== 'All') {
       params.append('category', selectedCategory)
     }
@@ -86,9 +92,9 @@ export default function QuestionsManager() {
     }
   }
 
-  // useEffect(() => {
-  //   fetchQuestions()
-  // }, [selectedCategory, searchText])
+  useEffect(() => {
+    fetchQuestions()
+  }, [selectedCategory, searchText])
 
   useEffect(() => {
     setFilteredQuestions(currentTestConfiguration.questionAnswerDefinitions)

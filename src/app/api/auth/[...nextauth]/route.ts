@@ -49,6 +49,7 @@ const handler: NextAuthOptions = NextAuth({
         else {
           authObj = await authorizeRespondent(credentials);
         }
+        console.log(`Auth Object: ${JSON.stringify(authObj)}`);
         return {
           id: authObj.id.toString(),
           email: authObj.email,
@@ -63,7 +64,7 @@ const handler: NextAuthOptions = NextAuth({
     error: '/error',
   },
   callbacks: {
-    jwt({ token, user, profile, account, trigger, session }) {
+    async jwt({ token, user, profile, account, trigger, session }) {
       // logger.info(`JWT Auth Token: ${JSON.stringify(token)}`);
       // logger.info(`JWT Auth User: ${JSON.stringify(user)}`);
       // if (user) {
@@ -72,9 +73,15 @@ const handler: NextAuthOptions = NextAuth({
       //   // token.user.id = user.id;
       //   token.userType = user.userType;
       // }
-      token.id = user?.id;
-      token.userType = user?.userType || '';
-      logger.info(`JWT Auth token: ${JSON.stringify(token)}`);
+      logger.info(`JWT Auth profile: ${JSON.stringify(profile)}`);
+      logger.info(`JWT Auth account: ${JSON.stringify(account)}`);
+      logger.info(`JWT Auth session: ${JSON.stringify(session)}`);
+      logger.info(`JWT Auth user: ${JSON.stringify(user)}`);
+      if(user) {
+        token.id = user?.id;
+        token.userType = user?.userType;
+      }
+      logger.info(`JWT Auth token 1: ${JSON.stringify(token)}`);
       return token;
       // const r = {
       //   ...token,
@@ -88,7 +95,7 @@ const handler: NextAuthOptions = NextAuth({
       // logger.info(`JWT Auth: ${JSON.stringify(r)}`);
       // return r;
     },
-    session({ session, user, token }) {
+    async session({ session, user, token }) {
       if (token) {
         // logger.info(`Session user available : ${JSON.stringify(token)}`);
         
@@ -109,12 +116,12 @@ const handler: NextAuthOptions = NextAuth({
       logger.info(`Session Auth : ${JSON.stringify(r)}`);
       return r;
     },
-    signIn: async ({ user, account, profile, email, credentials }) => {
-      if (account?.provider === 'credentials') {
-        return true;
-      }
-      return true;
-    }
+    // signIn: async ({ user, account, profile, email, credentials }) => {
+    //   if (account?.provider === 'credentials') {
+    //     return true;
+    //   }
+    //   return true;
+    // }
   },
   session: {
     strategy: 'jwt',
@@ -192,7 +199,7 @@ async function authorizeRespondent(credentials: any): Promise<{
     id: testRespondentInfo.testAccessId?.toString() || '',
     email: testRespondentInfo.email,
     name: testRespondentInfo.firstName + ' ' + testRespondentInfo.lastName,
-    userType: 'respondent'
+    userType: 'Respondent'
   };
 }
 

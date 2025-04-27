@@ -159,69 +159,69 @@ export default function AddQuestion() {
     };
     const [ answerOptions, setAnswerOptions ] = useState<number>(getMinOptions('Single Choice'));
 
-const onSubmit = async (data: QuestionForm) => {
-  alert('submit clicked');
-  try {
-    // Validate correct answer selection based on question type
-    if (['Single Choice', 'Multiple Choice', 'True False'].includes(data.type)) {
-      const hasCorrectOption = data.options.some(option => option.isCorrect);
-      if (!hasCorrectOption) {
-        toast.error('Please select at least one correct answer');
-        return;
-      }
-    }
+    const onSubmit = async (data: QuestionForm) => {
+      // alert('submit clicked');
+      try {
+        // Validate correct answer selection based on question type
+        if (['Single Choice', 'Multiple Choice', 'True False'].includes(data.type)) {
+          const hasCorrectOption = data.options.some(option => option.isCorrect);
+          if (!hasCorrectOption) {
+            toast.error('Please select at least one correct answer');
+            return;
+          }
+        }
 
-    const formattedData = {
-      ...data,
-      question: convertToRaw(data.question.getCurrentContent()),
-      options: data.options.map(option => ({
-        ...option,
-        content: convertToRaw(option.content.getCurrentContent())
-      }))
-    }
+        const formattedData = {
+          ...data,
+          question: convertToRaw(data.question.getCurrentContent()),
+          options: data.options.map(option => ({
+            ...option,
+            content: convertToRaw(option.content.getCurrentContent())
+          }))
+        }
 
-    setCurrentTestConfiguration(prev => ({
-      ...prev,
-      questionAnswerDefinitions: [{
-        question: {
-          questionId: 0,
-          question: JSON.stringify(formattedData.question),
-          category: formattedData.category,
-          type: formattedData.type,
-          createdBy: '',
-          createdOn: ''
-        },
-        answerOptions: formattedData.options.map((option) => ({
-          answerOptionId: 0,
-          answer: JSON.stringify(option.content),
-          category: formattedData.category,
-          isCorrect: option.isCorrect,
-          createdBy: '',
-          createdOn: ''
+        setCurrentTestConfiguration(prev => ({
+          ...prev,
+          questionAnswerDefinitions: [{
+            question: {
+              questionId: 0,
+              question: JSON.stringify(formattedData.question),
+              category: formattedData.category,
+              type: formattedData.type,
+              createdBy: '',
+              createdOn: ''
+            },
+            answerOptions: formattedData.options.map((option) => ({
+              answerOptionId: 0,
+              answer: JSON.stringify(option.content),
+              category: formattedData.category,
+              isCorrect: option.isCorrect,
+              createdBy: '',
+              createdOn: ''
+            }))
+          }]
         }))
-      }]
-    }))
 
-    console.log('currentTestConfiguration', currentTestConfiguration);
+        console.log('currentTestConfiguration', currentTestConfiguration);
 
-    const response = await fetch('/api/mytests/questionsmanager', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(currentTestConfiguration)
-    })
+        const response = await fetch('/api/mytests/questionsmanager', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(currentTestConfiguration)
+        })
 
-    if (response.ok) {
-      toast.success('Question added successfully')
-      router.push('/mytests/questionsmanager')
-      router.refresh()
+        if (response.ok) {
+          toast.success('Question added successfully')
+          router.push('/mytests/questionsmanager')
+          // router.refresh()
+        }
+      } catch (error: any) {
+        toast.error(error.message);
+      }
+
     }
-  } catch (error: any) {
-    toast.error(error.message);
-  }
-
-  }
 
     useEffect(() => {
       const subscription = watch((value, { name, type }) => {
