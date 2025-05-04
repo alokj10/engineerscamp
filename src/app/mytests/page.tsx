@@ -10,9 +10,9 @@ export default function MyTestsPage() {
   
   // Add authentication check at the start of component
   const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   const [showSearch, setShowSearch] = useState(false)
   const [searchText, setSearchText] = useState('')

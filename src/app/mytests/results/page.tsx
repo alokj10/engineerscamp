@@ -5,11 +5,14 @@ import { TestResponseAtom } from '@/app/store/myTestAtom'
 import { format } from 'date-fns'
 import { currentTestConfigurationAtom } from '@/app/store/myTestAtom'
 import { useAtom } from 'jotai'
+import AnswersReviewPage from './answersreview/page'
+import { useRouter } from 'next/navigation'
 
 export default function TestResultsPage() {
   const [testResponses, setTestResponses] = useState<TestResponseAtom[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
 
   useEffect(() => {
@@ -23,7 +26,7 @@ export default function TestResultsPage() {
         }
         
         const data = await response.json()
-        setTestResponses(data)
+        setTestResponses(data.results)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred while fetching results')
         console.error('Error fetching test results:', err)
@@ -42,7 +45,8 @@ export default function TestResultsPage() {
 
   const formatDate = (dateString: string): string => {
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy')
+      // Using the same format as getCurrentDateTimeLong from dateTimeUtils.ts
+      return format(new Date(dateString), 'MMM dd yyyy HH:mm:ss')
     } catch (e) {
       return 'Invalid date'
     }
@@ -54,15 +58,21 @@ export default function TestResultsPage() {
       const end = new Date(endDate).getTime()
       const durationMs = end - start
       
-      // Convert to minutes and seconds
-      const minutes = Math.floor(durationMs / 60000)
+      // Convert to hours, minutes and seconds
+      const hours = Math.floor(durationMs / 3600000)
+      const minutes = Math.floor((durationMs % 3600000) / 60000)
       const seconds = Math.floor((durationMs % 60000) / 1000)
       
-      return `${minutes}m ${seconds}s`
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`
+      } else {
+        return `${minutes}m ${seconds}s`
+      }
     } catch (e) {
       return 'N/A'
     }
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -90,10 +100,10 @@ export default function TestResultsPage() {
                   Name
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Start Date
+                  Started On
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  End Date
+                  Submitted On
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Time Taken
@@ -112,7 +122,28 @@ export default function TestResultsPage() {
               testResponses.map((response, index) => {
                 const isPassed = calculatePassStatus(response)
                 return (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <tr 
+                    key={index} 
+                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} cursor-pointer hover:bg-gray-100`}
+                    onClick={() => {
+                      // Create the parameter object with test response details
+                      const responseDetailsParam = encodeURIComponent(JSON.stringify(
+                        response.testResponseDetails.map(detail => ({
+                          questionId: detail.questionId,
+                          question: detail.question,
+                          answer: detail.answer,
+                          isCorrect: detail.isCorrect
+                        }))
+                      ))
+                      
+                      // Navigate to the answers review page with the parameter
+                      // window.location.href = `/mytests/results/answersreview?testId=${response.respondent.testId}&respondentId=${response.respondent.respondentId}&timestamp=${encodeURIComponent(response.startedOn)}&email=${encodeURIComponent(response.respondent.email)}&responseDetails=${responseDetailsParam}`
+
+                      // Use Next.js router for navigation
+                  router.push(`/mytests/results/answersreview?testId=${response.respondent.testId}&respondentId=${response.respondent.respondentId}&timestamp=${encodeURIComponent(response.startedOn)}&email=${encodeURIComponent(response.respondent.email)}&firstName=${encodeURIComponent(response.respondent.firstName)}&lastName=${encodeURIComponent(response.respondent.lastName)}&responseDetails=${responseDetailsParam}`);
+                  }}
+                    
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {response.respondent.firstName} {response.respondent.lastName}

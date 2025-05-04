@@ -19,9 +19,9 @@ export default function TestsLayout({
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentTestConfig] = useAtom(currentTestConfigurationAtom);
   const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   useEffect(() => {
     if (currentTestConfig.test.testId > 0) {
@@ -84,7 +84,7 @@ export default function TestsLayout({
   const testProgressItems = [
     // { icon: ComputerDesktopIcon, label: "Respondent Monitoring", href: "/mytests/monitoring" },
     { icon: ClipboardDocumentListIcon, label: "Results", href: "/mytests/results" },
-    { icon: CheckBadgeIcon, label: "Answers Review", href: "/mytests/review" },
+    // { icon: CheckBadgeIcon, label: "Answers Review", href: "/mytests/review" },
     { icon: ChartBarIcon, label: "Statistics", href: "/mytests/statistics" },
   ]
 

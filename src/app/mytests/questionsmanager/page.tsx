@@ -31,9 +31,9 @@ export default function QuestionsManager() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   const handleDeleteClick = (questionId: number) => {
     setShowDeleteConfirm(questionId);

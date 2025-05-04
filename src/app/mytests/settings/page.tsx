@@ -23,10 +23,10 @@ const testSchema = z.object({
 export default function Settings() {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const [testCategories, setTestCategories] = useState<string[]>([])
-  const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // const router = useRouter()
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   const fetchCategories = async () => {
     try {

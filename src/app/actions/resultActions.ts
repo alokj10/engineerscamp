@@ -33,6 +33,28 @@ export async function getTestResponsesByTestId(testId: number): Promise<TestResp
       }
     });
 
+    // Get all question answer mappings for this test to check correct answers
+    const questionAnswerMappings = await prisma.questionAnswerMappings.findMany({
+      where: {
+        questionId: {
+          in: testResponses.flatMap(response => 
+            response.TestResponseDetails.map(detail => detail.questionId)
+          )
+        },
+        isCorrect: true
+      },
+      select: {
+        questionId: true,
+        answerOptionId: true
+      }
+    });
+
+    // Create a map for quick lookup of correct answers
+    const correctAnswersMap = new Map();
+    questionAnswerMappings.forEach(mapping => {
+      correctAnswersMap.set(mapping.questionId, mapping.answerOptionId);
+    });
+
     // Map the Prisma response to TestResponseAtom format
     const formattedResponses: TestResponseAtom[] = testResponses.map(response => ({
       respondent: {
@@ -50,17 +72,25 @@ export async function getTestResponsesByTestId(testId: number): Promise<TestResp
       startedOn: response.startedOn.toISOString(),
       submittedOn: response.submittedOn?.toISOString() || '',
       score: response.score || 0,
-      testResponseDetails: response.TestResponseDetails.map(detail => ({
-        testId: response.testId,
-        respondentId: response.respondentId,
-        id: detail.id,
-        questionId: detail.questionId,
-        answerOptionId: detail.answerOptionId,
-        question: detail.question.question,
-        answer: detail.answerOption.answer,
-        answeredOn: detail.answeredOn.toISOString()
-      }))
+      testResponseDetails: response.TestResponseDetails.map(detail => {
+        // Check if the selected answer is correct
+        const correctAnswerId = correctAnswersMap.get(detail.questionId);
+        const isCorrect = correctAnswerId === detail.answerOptionId;
+        
+        return {
+          testId: response.testId,
+          respondentId: response.respondentId,
+          id: detail.id,
+          questionId: detail.questionId,
+          answerOptionId: detail.answerOptionId,
+          question: detail.question.question,
+          answer: detail.answerOption.answer,
+          answeredOn: detail.answeredOn.toISOString(),
+          isCorrect: isCorrect
+        };
+      })
     }));
+
 
     logger.info(`Successfully fetched ${formattedResponses.length} test responses for testId: ${testId}`);
     return formattedResponses;

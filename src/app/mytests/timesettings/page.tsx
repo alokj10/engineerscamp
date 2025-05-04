@@ -48,10 +48,10 @@ const TimeSettingsSchema = z.object({
 export default function TimeSettings() {
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
   const [durationOption, setDurationOption] = useState(currentTestConfiguration.test.testDurationMethod || 'complete')
-  const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // const router = useRouter()
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   const parseDuration = (duration?: string) => {
     if (!duration) return { hours: 0, minutes: 0 }

@@ -238,6 +238,7 @@ export async function calculateAndUpdateScore(testId: number, respondentId: numb
       logger.error(`No test response found for testId=${testId}, respondentId=${respondentId}`);
       throw new Error('No test response found');
     }
+    logger.info(`Found test response with id=${testResponse.id}`);
 
     // Get all response details for this test response
     const responseDetails = await prisma.testResponseDetails.findMany({
@@ -278,6 +279,7 @@ export async function calculateAndUpdateScore(testId: number, respondentId: numb
       },
       data: {
         score: totalScore,
+        submittedOn: getIsoDateTimeString(),
         updatedOn: getIsoDateTimeString(),
         status: 'COMPLETED'
       }

@@ -128,14 +128,6 @@ export default function QuizConsole() {
     );
 
     if(direction === 'next') {
-      const updatedResponse: QzResponseAtom = { 
-        ...selectedAnswers,
-        testId: session?.testId || 0,
-        respondentId: session?.respondentId || 0,
-        status: TestResponseStatus.InProgress,
-        questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
-      };
-      setSelectedAnswers(updatedResponse);
       await saveResponse();
     }
   };
@@ -161,20 +153,29 @@ export default function QuizConsole() {
     }
   };
 
-  const saveResponse = async () => {
+  const saveResponse = async (isSubmitted = false) => {
     try {
+
+      const updatedResponse: QzResponseAtom = { 
+        ...selectedAnswers,
+        testId: session?.testId || 0,
+        respondentId: session?.respondentId || 0,
+        status: isSubmitted ? TestResponseStatus.Submitted : TestResponseStatus.InProgress,
+        questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
+      };
+      setSelectedAnswers(updatedResponse);
       const response = await fetch('/api/qz/response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          QzSession: session,
-          QzResponse: selectedAnswers
-        })
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            QzSession: session,
+            QzResponse: updatedResponse
+          })
       });
       if (response.ok) {
-        alert(selectedAnswers?.status);
+        // alert(selectedAnswers?.status);
         if(selectedAnswers?.status  === TestResponseStatus.Submitted) {
           toast.success('Your answers have been submitted successfully.');
           setIsSubmitted(true);
@@ -189,12 +190,12 @@ export default function QuizConsole() {
     const updatedResponse: QzResponseAtom = { 
       ...selectedAnswers,
       testId: session?.testId || 0,
-      respondentId: 1,
+      respondentId: session?.respondentId || 0,
       status: TestResponseStatus.Submitted,
       questionAnswers: [...(selectedAnswers?.questionAnswers || [])]
     };
     setSelectedAnswers(updatedResponse);
-    await saveResponse();
+    await saveResponse(true);
   };
 
   // console.log('quiz session', session);

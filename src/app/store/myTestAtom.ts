@@ -54,8 +54,11 @@ export interface TestResponseDetailsAtom {
   testId: number,
   respondentId: number,
   questionId: number,
+  question: string,
   answerOptionId: number,
+  answer: string,
   answeredOn: string,
+  isCorrect: boolean
 }
 
 export interface TestResponseAtom {

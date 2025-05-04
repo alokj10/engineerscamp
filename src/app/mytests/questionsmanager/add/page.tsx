@@ -129,9 +129,9 @@ const questionSchema = z.object({
 export default function AddQuestion() {
     const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
     const router = useRouter()
-    useEffect(() => {
-      checkAuth(router)
-    }, [router])
+    // useEffect(() => {
+    //   checkAuth(router)
+    // }, [router])
     const { control, watch, handleSubmit } = useForm<QuestionForm>({
       resolver: zodResolver(questionSchema),
       defaultValues: {

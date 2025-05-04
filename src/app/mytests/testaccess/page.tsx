@@ -16,10 +16,10 @@ const respondentsSchema = z.array(z.object({
 export default function TestAccess() {
   const [email, setEmail] = useState('')
   const [currentTestConfiguration, setCurrentTestConfiguration] = useAtom(currentTestConfigurationAtom)
-  const router = useRouter()
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
+  // const router = useRouter()
+  // useEffect(() => {
+  //   checkAuth(router)
+  // }, [router])
 
   const addRespondent = () => {
     try {

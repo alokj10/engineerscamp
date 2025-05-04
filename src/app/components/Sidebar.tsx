@@ -13,10 +13,7 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  useEffect(() => {
-    checkAuth(router)
-  }, [router])
-
+  
   const menuItems = [
     // { name: 'Dashboard', icon: AdjustmentsHorizontalIcon, href: '/dashboard' },
     // { name: 'Questions', icon: ClipboardDocumentListIcon, href: '/questions' },
