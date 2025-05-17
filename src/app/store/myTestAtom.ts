@@ -70,6 +70,14 @@ export interface TestResponseAtom {
   testResponseDetails: TestResponseDetailsAtom[]
 }
 
+export interface TestResultStatisticsAtom {
+  testId: number,
+  respondentsCount: number,
+  passedCount: number,
+  failedCount: number,
+  avgCompletionTime: string,
+}
+
 export const TestQuestionMappingState = atom<TestQuestionMappingAtom | null>(null)
 
 
