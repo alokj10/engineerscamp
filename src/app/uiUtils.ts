@@ -1,23 +1,36 @@
+import { useSession } from "next-auth/react"
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
 
-export const checkAuth = async (router: AppRouterInstance) => {
+export const checkAuth = (router: AppRouterInstance) => {
     try {
-      // const response = await fetch('/api/auth/check')
-      const response = await fetch('/api/auth/check',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({}),
-        }
-      )
-      const data = await response.json()
+    //   const response = await fetch('/api/auth/check',
+    //     {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({}),
+    //     }
+    //   )
+    //   const data = await response.json()
       
-      if (!data.authenticated) {
-        router.push('/login')
-        router.refresh()
-    }
+    //   if (!data.authenticated) {
+    //     router.push('/login')
+    //     router.refresh()
+    // }
+      const {data: session, status} = useSession({required: true,
+        onUnauthenticated() {
+          alert('status')
+          router.push('/login')
+          router.refresh()
+        }
+      });
+      alert('data' + session)
+      // console.log('login status',status)
+      // if (status !== 'authenticated') {
+      //     router.push('/login')
+      //     router.refresh()
+      // }
     } catch (error) {
       router.push('/login')
       router.refresh()

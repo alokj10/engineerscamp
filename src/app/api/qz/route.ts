@@ -9,6 +9,7 @@ import { getSession, useSession } from 'next-auth/react'
 import { DefaultSession, Session } from 'next-auth'
 import { NextApiRequest } from 'next'
 import { getToken } from 'next-auth/jwt'
+// import authOptions from '@/app/lib/auth/actions'
 
 const logger = new Logger()
 
